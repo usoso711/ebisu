@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Ebisu Lunch Roulette</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg1:#111827;--bg2:#3b0764;--card:rgba(255,255,255,.11);--card2:rgba(255,255,255,.17);--text:#fff;--muted:rgba(255,255,255,.72);--accent:#facc15;--green:#34d399;--danger:#f87171}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:radial-gradient(circle at top left,#fb7185 0,transparent 28%),radial-gradient(circle at bottom right,#22d3ee 0,transparent 30%),linear-gradient(145deg,var(--bg1),var(--bg2));overflow-x:hidden}
+.app{width:min(1000px,100%);margin:auto;padding:16px 14px 50px}header{text-align:center;padding:12px 4px}.badge{display:inline-flex;padding:7px 12px;border-radius:999px;background:rgba(255,255,255,.15);backdrop-filter:blur(12px);font-size:12px;color:var(--muted);margin-bottom:10px}h1{margin:0;font-size:clamp(32px,8vw,58px);letter-spacing:-.05em;line-height:1}h1 span{color:var(--accent);text-shadow:0 0 24px rgba(250,204,21,.45)}.lead{margin:12px auto 0;max-width:650px;color:var(--muted);font-size:14px;line-height:1.65}
+.topbar{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin:8px 0}.user-pill{padding:8px 12px;border-radius:999px;background:rgba(255,255,255,.12);font-size:13px}
+.card{margin-top:16px;padding:16px;border:1px solid rgba(255,255,255,.16);border-radius:26px;background:linear-gradient(180deg,var(--card2),var(--card));box-shadow:0 24px 70px rgba(0,0,0,.25);backdrop-filter:blur(18px)}
+.auth{max-width:520px;margin:30px auto}.auth h2{margin:0 0 14px}.field{display:grid;gap:6px;margin:10px 0}.field label{font-size:13px;color:var(--muted)}input,textarea,select{width:100%;border:1px solid rgba(255,255,255,.18);background:rgba(0,0,0,.22);color:#fff;border-radius:13px;padding:12px 13px;font:inherit;outline:none}textarea{min-height:100px;resize:vertical}input:focus,textarea:focus{border-color:var(--accent)}.btns{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}@media(min-width:480px){.btns.two{grid-template-columns:1fr 1fr}}button,.link-btn{border:0;border-radius:14px;padding:13px 15px;font-weight:800;font-size:14px;cursor:pointer;color:#111827;background:var(--accent);text-decoration:none;text-align:center}button.secondary,.link-btn.secondary{color:#fff;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.14)}button.danger{color:#fff;background:rgba(248,113,113,.2);border:1px solid rgba(248,113,113,.35)}button:disabled{opacity:.5;cursor:not-allowed}.hint{font-size:12px;color:var(--muted);line-height:1.6}.error{color:#fecaca;background:rgba(127,29,29,.25);border:1px solid rgba(248,113,113,.3);padding:10px;border-radius:12px;font-size:13px;margin-top:10px}.success{color:#bbf7d0;background:rgba(6,78,59,.25);border:1px solid rgba(52,211,153,.3);padding:10px;border-radius:12px;font-size:13px;margin-top:10px}
+.roulette{display:grid;grid-template-columns:1fr;gap:16px;align-items:center}@media(min-width:760px){.roulette{grid-template-columns:1.05fr .95fr}}.wheel-wrap{position:relative;display:flex;justify-content:center;align-items:center;min-height:315px}.pointer{position:absolute;top:10px;z-index:3;width:0;height:0;border-left:17px solid transparent;border-right:17px solid transparent;border-top:32px solid var(--accent);filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}.wheel{width:min(78vw,310px);height:min(78vw,310px);border-radius:50%;background:conic-gradient(#fb7185 0 12.5%,#facc15 12.5% 25%,#34d399 25% 37.5%,#60a5fa 37.5% 50%,#c084fc 50% 62.5%,#f97316 62.5% 75%,#2dd4bf 75% 87.5%,#f472b6 87.5% 100%);border:10px solid rgba(255,255,255,.22);box-shadow:inset 0 0 30px rgba(255,255,255,.2),0 20px 70px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transition:transform 4s cubic-bezier(.12,.75,.08,1)}.wheel-center{width:46%;height:46%;border-radius:50%;background:rgba(17,24,39,.9);border:1px solid rgba(255,255,255,.22);display:flex;align-items:center;justify-content:center;text-align:center;padding:12px;font-weight:900;line-height:1.35}
+.panel{border-radius:22px;padding:16px;background:rgba(0,0,0,.17);border:1px solid rgba(255,255,255,.13)}.status{color:var(--muted);font-size:13px;margin-bottom:10px}.result{min-height:155px;border-radius:19px;padding:16px;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.14)}.genre{display:inline-block;padding:5px 10px;background:rgba(250,204,21,.16);color:#fde68a;border-radius:999px;font-size:12px;margin-bottom:8px}.result h2{margin:0 0 7px;font-size:24px}.meta{color:var(--muted);font-size:13px;line-height:1.7}.actions{display:grid;grid-template-columns:1fr;gap:9px;margin-top:12px}@media(min-width:460px){.actions{grid-template-columns:1fr 1fr}}.full{grid-column:1/-1}
+.settings{display:grid;gap:10px;margin-top:14px}.switch-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 13px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1)}.switch-row strong{display:block;font-size:13px}.switch-row small{display:block;color:var(--muted);margin-top:3px;font-size:11px}input[type=checkbox]{width:23px;height:23px;accent-color:var(--accent)}
+.section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.section-head h3{margin:0;font-size:18px}.count{font-size:11px;color:var(--muted)}.list{display:grid;gap:9px}.item{padding:12px;border-radius:16px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.09)}.item-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}.name{font-weight:800}.info{margin-top:4px;color:var(--muted);font-size:12px;line-height:1.55}.visited{color:var(--green);font-size:11px;white-space:nowrap}.empty{color:var(--muted);font-size:13px;line-height:1.7}.admin-tools{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}.mini{padding:7px 9px!important;border-radius:10px!important;font-size:11px!important}
+.shop-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.shop-actions button{padding:8px 10px;font-size:11px}
+.comments{margin-top:10px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px}.comment{padding:9px 0;border-bottom:1px solid rgba(255,255,255,.08)}.comment:last-child{border-bottom:0}.comment-head{display:flex;justify-content:space-between;gap:8px;font-size:12px}.comment-body{font-size:13px;line-height:1.6;margin-top:3px;white-space:pre-wrap;word-break:break-word}.like{background:transparent;color:#fff;border:0;padding:3px 5px;font-size:11px}.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;align-items:center;justify-content:center;padding:16px;z-index:50}.modal.show{display:flex}.modal-box{width:min(560px,100%);max-height:90vh;overflow:auto;background:#1b1730;border:1px solid rgba(255,255,255,.18);border-radius:22px;padding:17px;box-shadow:0 30px 100px #000}.modal-head{display:flex;justify-content:space-between;align-items:center}.modal-head h3{margin:0}.x{background:rgba(255,255,255,.1);color:#fff;border:0;padding:7px 10px;border-radius:10px}
+.toast{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);width:min(92vw,450px);padding:12px 15px;border-radius:15px;background:rgba(17,24,39,.95);color:#fff;border:1px solid rgba(255,255,255,.18);box-shadow:0 20px 50px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.25s;z-index:80;text-align:center;font-size:13px}.toast.show{opacity:1;bottom:28px}.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="authView" class="app">
+  <header><div class="badge">🍽️ Ebisu Neo-Nart Lunch Selector</div><h1>今日のランチを<br><span>運命で決める</span></h1><p class="lead">恵比寿ネオナート周辺の候補から、みんなでランチを決めよう。</p></header>
+  <div class="card auth">
+    <h2 id="authTitle">ログイン</h2>
+    <div id="authMessage"></div>
+    <div id="usernameField" class="field hidden"><label>ユーザー名</label><input id="username" maxlength="30" placeholder="例：Yusuke"></div>
+    <div class="field"><label>メールアドレス</label><input id="email" type="email" autocomplete="email" placeholder="you@example.com"></div>
+    <div class="field"><label>パスワード</label><input id="password" type="password" autocomplete="current-password" placeholder="6文字以上"></div>
+    <div class="btns"><button id="authBtn">ログイン</button><button id="toggleAuth" class="secondary">新規登録はこちら</button></div>
+    <p class="hint">新規登録後、Supabaseの設定によってはメール確認が必要です。</p>
+  </div>
+</div>
+
+<div id="appView" class="app hidden">
+<header>
+  <div class="badge">🍽️ Ebisu Neo-Nart Lunch Selector</div>
+  <h1>今日のランチを<br><span>運命で決める</span></h1>
+  <p class="lead">今週行った店・昨日と同じジャンルを避けながら、みんなの候補からランダムに決定。</p>
+</header>
+<div class="topbar"><span id="userPill" class="user-pill"></span><button id="logoutBtn" class="secondary mini">ログアウト</button></div>
+
+<section class="card">
+<div class="roulette">
+<div class="wheel-wrap"><div class="pointer"></div><div id="wheel" class="wheel"><div id="wheelCenter" class="wheel-center">TAP<br>SPIN</div></div></div>
+<div class="panel">
+<div id="status" class="status">候補を読み込み中...</div>
+<div id="result" class="result"><span class="genre">READY</span><h2>ルーレットを回してね</h2><div class="meta">条件に合うお店から選びます。</div></div>
+<div class="actions">
+<button id="spinBtn">🎲 今日のランチを決める</button>
+<button id="visitedBtn" class="secondary" disabled>✅ 行った！</button>
+<a id="mapBtn" class="link-btn" href="#" target="_blank" rel="noopener" style="display:none">📍 地図で見る</a>
+<button id="commentBtn" class="secondary" disabled>💬 コメントを見る</button>
+</div>
+</div></div>
+<div class="settings">
+<label class="switch-row"><div><strong>今週行った店を避ける</strong><small>月曜始まり・全員の履歴を対象</small></div><input id="avoidWeekVisited" type="checkbox" checked></label>
+<label class="switch-row"><div><strong>昨日と同じジャンルを避ける</strong><small>昨日のランチジャンルを全員の履歴から判定</small></div><input id="avoidYesterdayGenre" type="checkbox" checked></label>
+</div>
+</section>
+
+<section class="card"><div class="section-head"><h3>📒 今週行ったランチ</h3><span id="historyCount" class="count"></span></div><div id="historyList" class="list"></div></section>
+
+<section class="card"><div class="section-head"><h3>⭐ 候補リスト</h3><span id="shopCount" class="count"></span></div><div id="shopList" class="list"></div></section>
+
+<section id="adminCard" class="card hidden"><div class="section-head"><h3>👑 店舗管理</h3><button id="addShopBtn" class="mini">＋ お店を追加</button></div><p class="hint">管理者だけが追加・編集・削除できます。</p></section>
+</div>
+
+<div id="commentModal" class="modal"><div class="modal-box"><div class="modal-head"><h3 id="commentTitle">💬 コメント</h3><button class="x" onclick="closeModal()">閉じる</button></div><div id="commentsList" class="comments"></div><div class="field"><label>コメント</label><textarea id="commentBody" maxlength="1000" placeholder="このお店について一言"></textarea></div><button id="sendCommentBtn">コメントする</button></div></div>
+
+<div id="shopModal" class="modal"><div class="modal-box"><div class="modal-head"><h3 id="shopModalTitle">お店を追加</h3><button class="x" onclick="closeShopModal()">閉じる</button></div><input type="hidden" id="shopId"><div class="field"><label>店名</label><input id="shopName"></div><div class="field"><label>ジャンル</label><input id="shopGenre"></div><div class="field"><label>評価</label><input id="shopRating" type="number" min="0" max="5" step="0.01" value="3.50"></div><div class="field"><label>メモ</label><textarea id="shopNote"></textarea></div><div class="field"><label>Google Maps URL</label><input id="shopMap" placeholder="https://www.google.com/maps/search/?api=1&query=..."></div><div class="btns two"><button id="saveShopBtn">保存</button><button class="danger" onclick="closeShopModal()">キャンセル</button></div></div></div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* =========================================================
+   ★★★ ここだけあなたのSupabase情報に変更 ★★★
+   ========================================================= */
+const SUPABASE_URL = "https://ukchijvljtnjstizunyj.supabase.co";
+const SUPABASE_KEY = "sb_publishable_QeR1rRiE7G7I3N2MyKHfVA_obH27dEC";
+/* ========================================================= */
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $=id=>document.getElementById(id);
+let currentUser=null,currentProfile=null,currentShop=null,spinning=false,rotation=0,authMode="login";
+
+function esc(v){return String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("'","&#039;")}
+function toast(msg){$("toast").textContent=msg;$("toast").classList.add("show");setTimeout(()=>$("toast").classList.remove("show"),2500)}
+function dateKey(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
+function weekStart(){const d=new Date(),day=d.getDay();d.setDate(d.getDate()+(day===0?-6:1-day));d.setHours(0,0,0,0);return d}
+function isThisWeek(s){const d=new Date(s+"T00:00:00"),st=weekStart(),en=new Date(st);en.setDate(en.getDate()+7);return d>=st&&d<en}
+function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return dateKey(d)}
+function weightedRandom(a){const min=Math.min(...a.map(x=>Number(x.rating)||0));const w=a.map(x=>Math.max(1,((Number(x.rating)||min)-min+.1)*10));let r=Math.random()*w.reduce((x,y)=>x+y,0);for(let i=0;i<a.length;i++){r-=w[i];if(r<=0)return a[i]}return a[a.length-1]}
+
+async function init(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session) await enterApp(session.user);
+  else showAuth();
+  sb.auth.onAuthStateChange(async(_event,session)=>{
+    if(session) await enterApp(session.user); else showAuth();
+  });
+}
+function showAuth(){$("authView").classList.remove("hidden");$("appView").classList.add("hidden")}
+async function enterApp(user){
+  currentUser=user;
+  let {data:profile,error}=await sb.from("profiles").select("*").eq("id",user.id).maybeSingle();
+  if(error){showAuthMessage(error.message,true);return}
+  if(!profile){
+    const username=(user.user_metadata?.username||user.email?.split("@")[0]||"user").slice(0,30);
+    const ins=await sb.from("profiles").insert({id:user.id,username});
+    if(ins.error && ins.error.code!=="23505"){showAuthMessage(ins.error.message,true);return}
+    ({data:profile}=await sb.from("profiles").select("*").eq("id",user.id).single());
+  }
+  currentProfile=profile;
+  $("authView").classList.add("hidden");$("appView").classList.remove("hidden");
+  $("userPill").textContent=`👤 ${profile.username}${profile.role==="admin"?" 👑":""}`;
+  $("adminCard").classList.toggle("hidden",profile.role!=="admin");
+  await refreshAll();
+}
+function showAuthMessage(m,error=false){$("authMessage").innerHTML=`<div class="${error?"error":"success"}">${esc(m)}</div>`}
+function setAuthMode(mode){authMode=mode;const reg=mode==="signup";$("authTitle").textContent=reg?"新規登録":"ログイン";$("authBtn").textContent=reg?"アカウントを作成":"ログイン";$("toggleAuth").textContent=reg?"ログインはこちら":"新規登録はこちら";$("usernameField").classList.toggle("hidden",!reg);$("authMessage").innerHTML=""}
+
+$("toggleAuth").onclick=()=>setAuthMode(authMode==="login"?"signup":"login");
+$("authBtn").onclick=async()=>{
+  const email=$("email").value.trim(),password=$("password").value,username=$("username").value.trim();
+  $("authMessage").innerHTML="";
+  if(!email||!password||(authMode==="signup"&&!username)){showAuthMessage("必要な項目を入力してください。",true);return}
+  $("authBtn").disabled=true;
+  try{
+    if(authMode==="signup"){
+      const {data,error}=await sb.auth.signUp({email,password,options:{data:{username}}});
+      if(error)throw error;
+      if(data.session) toast("登録しました！");
+      else showAuthMessage("登録しました。メール確認が必要な設定の場合は、届いたメールを確認してください。");
+    }else{
+      const {error}=await sb.auth.signInWithPassword({email,password});
+      if(error)throw error;
+    }
+  }catch(e){showAuthMessage(e.message,true)}finally{$("authBtn").disabled=false}
+};
+$("logoutBtn").onclick=()=>sb.auth.signOut();
+
+async function refreshAll(){await loadShops();await loadHistory()}
+let shops=[],history=[];
+async function loadShops(){
+  const {data,error}=await sb.from("shops").select("*").order("rating",{ascending:false});
+  if(error){toast("お店の読み込みに失敗: "+error.message);return}
+  shops=data||[];$("shopCount").textContent=`${shops.length}店`;renderShops();updateStatus();
+}
+async function loadHistory(){
+  const {data,error}=await sb.from("lunch_history").select("id,visited_date,user_id,shop_id,profiles(username),shops(name,genre,rating)").order("visited_date",{ascending:false}).limit(200);
+  if(error){toast("履歴の読み込みに失敗: "+error.message);return}
+  history=data||[];renderHistory();updateStatus();
+}
+function renderHistory(){
+  const h=history.filter(x=>isThisWeek(x.visited_date));$("historyCount").textContent=`${h.length}件`;
+  $("historyList").innerHTML=h.length?h.map(x=>`<div class="item"><div class="item-row"><div><div class="name">${esc(x.shops?.name||"不明")}</div><div class="info">${esc(x.visited_date)} / ${esc(x.shops?.genre||"")} / ⭐ ${Number(x.shops?.rating||0).toFixed(2)}<br>👤 ${esc(x.profiles?.username||"ユーザー")}</div></div><div class="visited">VISITED</div></div></div>`).join(""):`<div class="empty">今週はまだ記録がありません。</div>`;
+}
+function renderShops(){
+  const visited=new Set(history.filter(x=>isThisWeek(x.visited_date)).map(x=>x.shop_id));
+  $("shopList").innerHTML=shops.map(s=>`<div class="item"><div class="item-row"><div><div class="name">${esc(s.name)}</div><div class="info">${esc(s.genre)} / ⭐ ${Number(s.rating).toFixed(2)}<br>${esc(s.note||"")}</div></div><div class="visited">${visited.has(s.id)?"今週済":""}</div></div><div class="shop-actions"><button class="secondary" onclick="openComments('${s.id}')">💬 コメント</button><a class="link-btn secondary mini" href="${esc(s.map_url||"#")}" target="_blank" rel="noopener">📍 地図</a>${currentProfile?.role==="admin"?`<button class="secondary" onclick="editShop('${s.id}')">✏️ 編集</button><button class="danger mini" onclick="deleteShop('${s.id}')">🗑️ 削除</button>`:""}</div></div>`).join("");
+}
+function updateStatus(){if(!shops.length)return;$("status").textContent=`${getCandidates().length}件の候補があります。`}
+function getCandidates(){
+  const weekNames=new Set(history.filter(x=>isThisWeek(x.visited_date)).map(x=>x.shop_id));
+  const yesterdayRows=history.filter(x=>x.visited_date===yesterday());
+  const yGenres=new Set(yesterdayRows.map(x=>x.shops?.genre).filter(Boolean));
+  let c=shops.filter(s=>(!$("avoidWeekVisited").checked||!weekNames.has(s.id))&&(!$("avoidYesterdayGenre").checked||!yGenres.size||!yGenres.has(s.genre)));
+  if(!c.length && $("avoidYesterdayGenre").checked)c=shops.filter(s=>!$("avoidWeekVisited").checked||!weekNames.has(s.id));
+  if(!c.length)c=[...shops];
+  return c;
+}
+$("avoidWeekVisited").onchange=updateStatus;$("avoidYesterdayGenre").onchange=updateStatus;
+
+$("spinBtn").onclick=async()=>{
+  if(spinning)return;if(!shops.length){toast("お店がありません。");return}
+  spinning=true;$("spinBtn").disabled=true;$("visitedBtn").disabled=true;$("commentBtn").disabled=true;$("mapBtn").style.display="none";
+  const c=getCandidates(),selected=weightedRandom(c);currentShop=selected;
+  rotation+=360*(5+Math.floor(Math.random()*3))+Math.floor(Math.random()*360);$("wheel").style.transform=`rotate(${rotation}deg)`;$("wheelCenter").innerHTML="SPINNING<br>🍜";$("status").textContent=`${c.length}件から選択中...`;
+  setTimeout(()=>{showResult(selected,c.length);spinning=false;$("spinBtn").disabled=false;$("visitedBtn").disabled=false;$("commentBtn").disabled=false},4100);
+};
+function showResult(s,count){$("wheelCenter").innerHTML=`${esc(s.genre)}<br>決定`;$("result").innerHTML=`<span class="genre">${esc(s.genre)}</span><h2>${esc(s.name)}</h2><div class="meta">⭐ 評価：${Number(s.rating).toFixed(2)}<br>${esc(s.note||"")}<br>候補 ${count} 件から選ばれました。</div>`;$("status").textContent="今日のランチ、決まりました。";$("mapBtn").href=s.map_url||"#";$("mapBtn").style.display="block";$("commentBtn").disabled=false}
+$("visitedBtn").onclick=async()=>{
+  if(!currentShop)return;
+  const {error}=await sb.from("lunch_history").insert({shop_id:currentShop.id,user_id:currentUser.id,visited_date:dateKey()});
+  if(error?.code==="23505"){toast("今日はすでに記録されています。");return}
+  if(error){toast(error.message);return}
+  toast(`「${currentShop.name}」を記録しました！`);$("visitedBtn").disabled=true;await loadHistory();renderShops();updateStatus();
+};
+$("commentBtn").onclick=()=>currentShop&&openComments(currentShop.id);
+
+async function openComments(shopId){
+  const shop=shops.find(x=>x.id===shopId);if(!shop)return;
+  $("commentTitle").textContent=`💬 ${shop.name}`;
+  $("commentModal").classList.add("show");$("commentsList").innerHTML=`<div class="empty">読み込み中...</div>`;$("commentBody").value="";$("sendCommentBtn").dataset.shopId=shopId;
+  const {data,error}=await sb.from("comments").select("id,body,user_id,created_at,profiles(username),comment_likes(user_id)").eq("shop_id",shopId).order("created_at",{ascending:false});
+  if(error){$("commentsList").innerHTML=`<div class="error">${esc(error.message)}</div>`;return}
+  $("commentsList").innerHTML=data?.length?data.map(c=>{const likes=c.comment_likes||[];return `<div class="comment"><div class="comment-head"><strong>👤 ${esc(c.profiles?.username||"ユーザー")}</strong><span>${new Date(c.created_at).toLocaleString("ja-JP")}</span></div><div class="comment-body">${esc(c.body)}</div><button class="like" onclick="toggleLike('${c.id}',${likes.some(l=>l.user_id===currentUser.id)})">❤️ ${likes.length}</button>${c.user_id===currentUser.id?`<button class="like" onclick="deleteComment('${c.id}','${shopId}')">🗑️</button>`:""}</div>`}).join(""):`<div class="empty">まだコメントはありません。最初のコメントをどうぞ。</div>`;
+}
+function closeModal(){$("commentModal").classList.remove("show")}
+async function toggleLike(commentId,liked){if(liked){await sb.from("comment_likes").delete().eq("comment_id",commentId).eq("user_id",currentUser.id)}else{await sb.from("comment_likes").insert({comment_id:commentId,user_id:currentUser.id})}await openComments($("sendCommentBtn").dataset.shopId)}
+async function deleteComment(id,shopId){if(!confirm("コメントを削除しますか？"))return;const {error}=await sb.from("comments").delete().eq("id",id);if(error)toast(error.message);else await openComments(shopId)}
+$("sendCommentBtn").onclick=async()=>{const body=$("commentBody").value.trim(),shopId=$("sendCommentBtn").dataset.shopId;if(!body)return toast("コメントを入力してください。");const {error}=await sb.from("comments").insert({shop_id:shopId,user_id:currentUser.id,body});if(error){toast(error.message);return}$("commentBody").value="";await openComments(shopId)};
+
+function openShopModal(s=null){$("shopModal").classList.add("show");$("shopModalTitle").textContent=s?"お店を編集":"お店を追加";$("shopId").value=s?.id||"";$("shopName").value=s?.name||"";$("shopGenre").value=s?.genre||"";$("shopRating").value=s?.rating??3.50;$("shopNote").value=s?.note||"";$("shopMap").value=s?.map_url||""}
+function closeShopModal(){$("shopModal").classList.remove("show")}
+$("addShopBtn").onclick=()=>openShopModal();
+function editShop(id){if(currentProfile?.role!=="admin")return;const s=shops.find(x=>x.id===id);if(s)openShopModal(s)}
+$("saveShopBtn").onclick=async()=>{
+  if(currentProfile?.role!=="admin")return;
+  const id=$("shopId").value,data={name:$("shopName").value.trim(),genre:$("shopGenre").value.trim(),rating:Number($("shopRating").value),note:$("shopNote").value.trim(),map_url:$("shopMap").value.trim()};
+  if(!data.name||!data.genre)return toast("店名とジャンルは必須です。");
+  const res=id?await sb.from("shops").update(data).eq("id",id):await sb.from("shops").insert({...data,created_by:currentUser.id});
+  if(res.error){toast(res.error.message);return}closeShopModal();toast("保存しました。");await loadShops();
+};
+async function deleteShop(id){if(currentProfile?.role!=="admin"||!confirm("この店を削除しますか？"))return;const {error}=await sb.from("shops").delete().eq("id",id);if(error)toast(error.message);else{toast("削除しました。");await refreshAll()}}
+
+init();
+</script>
+</body>
+</html>
