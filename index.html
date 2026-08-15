@@ -3280,32 +3280,24 @@ function stopSpin(){
     spinCandidates.length;
 
 
+  const targetIndex =
+    Math.floor(
+      Math.random() * n
+    );
+
   const selected =
-    spinCandidates[
-      tickerIndex
-    ] ||
-    spinCandidates[0];
+    spinCandidates[targetIndex];
 
 
   currentShop =
     selected;
 
 
-  const idx =
-    spinCandidates.findIndex(
-      x =>
-        x.id ===
-        selected.id
-    );
-
-
   const angle =
     360 / n;
 
-
   const centerAngle =
-    idx * angle + angle / 2;
-
+    targetIndex * angle + angle / 2;
 
   const targetDeg =
     (360 - centerAngle) % 360;
@@ -3332,7 +3324,7 @@ function stopSpin(){
 
 
   const duration =
-    1600;
+    2000;
 
 
   const t0 =
@@ -3367,6 +3359,24 @@ function stopSpin(){
 
     $("wheelSvg").style.transform =
       `rotate(${r}deg)`;
+
+
+    if(p < 0.9){
+
+      const dummyIdx =
+        Math.floor((r / (360 / n))) % n;
+
+      const idx =
+        (n - (dummyIdx % n)) % n;
+
+      if(spinCandidates[idx]){
+
+        $("tickerName").textContent =
+          spinCandidates[idx].name;
+
+      }
+
+    }
 
 
     if(p < 1){
@@ -3414,7 +3424,7 @@ function finishSpin(selected){
 
 
   $("wheelCenter").innerHTML =
-    "WIN!";
+    esc(selected.genre || "WIN!");
 
 
   $("spinBtn").textContent =
