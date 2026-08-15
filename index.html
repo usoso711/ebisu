@@ -3,11 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>恵比寿ランチルーレット</title>
+<title>恵比寿ランチ</title>
 
-<meta name="apple-mobile-web-app-title" content="エビラン">
+<meta name="apple-mobile-web-app-title" content="恵比寿ランチ">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
 <link rel="apple-touch-icon" href="icon.PNG">
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -16,21 +17,29 @@
 :root{
   --bg1:#111827;
   --bg2:#3b0764;
-  --card:rgba(255,255,255,.11);
-  --card2:rgba(255,255,255,.17);
+  --card:rgba(255,255,255,.12);
+  --card2:rgba(255,255,255,.18);
   --text:#fff;
-  --muted:rgba(255,255,255,.72);
+  --muted:rgba(255,255,255,.74);
   --accent:#facc15;
   --green:#34d399;
   --danger:#f87171;
 }
 
 *{
-  box-sizing:border-box
+  box-sizing:border-box;
+}
+
+html,
+body{
+  width:100%;
+  max-width:100%;
+  margin:0;
+  padding:0;
+  overflow-x:hidden;
 }
 
 body{
-  margin:0;
   min-height:100vh;
   font-family:
     system-ui,
@@ -40,10 +49,9 @@ body{
     sans-serif;
   color:var(--text);
   background:
-    radial-gradient(circle at top left,#fb7185 0,transparent 28%),
+    radial-gradient(circle at top left,#fb7185 0,transparent 30%),
     radial-gradient(circle at bottom right,#22d3ee 0,transparent 30%),
     linear-gradient(145deg,var(--bg1),var(--bg2));
-  overflow-x:hidden;
 }
 
 button,
@@ -53,19 +61,29 @@ select{
   font:inherit;
 }
 
+button,
+a{
+  -webkit-tap-highlight-color:transparent;
+}
+
 .app{
-  width:min(1000px,100%);
-  margin:auto;
-  padding:16px 14px 60px;
+  width:100%;
+  max-width:1000px;
+  margin:0 auto;
+  padding:
+    calc(12px + env(safe-area-inset-top))
+    12px
+    calc(60px + env(safe-area-inset-bottom));
 }
 
 header{
   text-align:center;
-  padding:12px 4px;
+  padding:8px 4px 12px;
 }
 
 .badge{
   display:inline-flex;
+  align-items:center;
   padding:7px 12px;
   border-radius:999px;
   background:rgba(255,255,255,.15);
@@ -77,8 +95,8 @@ header{
 
 h1{
   margin:0;
-  font-size:clamp(32px,8vw,58px);
-  letter-spacing:-.05em;
+  font-size:clamp(34px,9vw,58px);
+  letter-spacing:-.06em;
   line-height:1;
 }
 
@@ -100,7 +118,7 @@ h1 span{
   justify-content:flex-end;
   align-items:center;
   gap:8px;
-  margin:8px 0;
+  margin:5px 0 8px;
   flex-wrap:wrap;
 }
 
@@ -112,10 +130,11 @@ h1 span{
 }
 
 .card{
-  margin-top:16px;
-  padding:16px;
+  width:100%;
+  margin-top:14px;
+  padding:15px;
   border:1px solid rgba(255,255,255,.16);
-  border-radius:26px;
+  border-radius:24px;
   background:
     linear-gradient(
       180deg,
@@ -128,7 +147,7 @@ h1 span{
 
 .auth{
   max-width:520px;
-  margin:30px auto;
+  margin:25px auto;
 }
 
 .auth h2{
@@ -150,6 +169,7 @@ input,
 textarea,
 select{
   width:100%;
+  min-width:0;
   border:1px solid rgba(255,255,255,.18);
   background:rgba(0,0,0,.22);
   color:#fff;
@@ -245,157 +265,99 @@ button:disabled{
   margin-top:10px;
 }
 
-/* =========================================================
+/* =========================
    ルーレット
-========================================================= */
+========================= */
 
-.roulette{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:16px;
-  align-items:center;
-}
-
-@media(min-width:760px){
-  .roulette{
-    grid-template-columns:1.05fr .95fr;
-  }
-}
-
-.wheel-wrap{
-  position:relative;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  min-height:350px;
+.roulette-card{
   padding:10px;
+}
+
+.roulette-wrap{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  overflow:hidden;
+}
+
+.wheel-area{
+  position:relative;
+  width:min(94vw,600px);
+  max-width:100%;
+  aspect-ratio:1/1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  touch-action:manipulation;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+#wheelCanvas{
+  display:block;
+  width:100%;
+  height:100%;
+  max-width:100%;
+  cursor:pointer;
+  filter:
+    drop-shadow(0 22px 38px rgba(0,0,0,.38));
 }
 
 .pointer{
   position:absolute;
-  top:2px;
-  z-index:10;
+  top:-1px;
+  left:50%;
+  transform:translateX(-50%);
+  z-index:5;
   width:0;
   height:0;
-  border-left:18px solid transparent;
-  border-right:18px solid transparent;
-  border-top:38px solid var(--accent);
+  border-left:20px solid transparent;
+  border-right:20px solid transparent;
+  border-top:42px solid #fff;
   filter:
-    drop-shadow(0 5px 5px rgba(0,0,0,.35))
-    drop-shadow(0 0 10px rgba(250,204,21,.45));
+    drop-shadow(0 4px 5px rgba(0,0,0,.4));
+  pointer-events:none;
 }
 
 .pointer::after{
   content:"";
   position:absolute;
-  left:-7px;
-  top:-34px;
-  width:14px;
-  height:14px;
+  left:-14px;
+  top:-38px;
+  width:28px;
+  height:28px;
   border-radius:50%;
-  background:#fff;
-}
-
-.wheel-area{
-  position:relative;
-  width:min(88vw,520px);
-  aspect-ratio:1;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  touch-action:manipulation;
-  cursor:pointer;
-}
-
-.wheel-area::before{
-  content:"";
-  position:absolute;
-  inset:3%;
-  border-radius:50%;
-  border:2px solid rgba(255,255,255,.4);
+  background:var(--accent);
   box-shadow:
-    0 0 0 8px rgba(255,255,255,.05),
-    0 0 35px rgba(255,255,255,.18),
-    0 20px 70px rgba(0,0,0,.4);
-  pointer-events:none;
-  z-index:3;
+    0 0 18px rgba(250,204,21,.9);
 }
 
-#wheelCanvas{
-  width:100%;
-  height:100%;
-  display:block;
-  transform-origin:center center;
-  will-change:transform;
-  border-radius:50%;
-}
-
-.wheel-center{
-  position:absolute;
-  z-index:5;
-  width:31%;
-  aspect-ratio:1;
-  border-radius:50%;
-  background:
-    radial-gradient(circle at 35% 30%,
-      #374151 0,
-      #1f2937 48%,
-      #111827 100%);
-  border:5px solid rgba(255,255,255,.22);
-  box-shadow:
-    0 0 0 7px rgba(0,0,0,.12),
-    inset 0 0 25px rgba(255,255,255,.08),
-    0 8px 25px rgba(0,0,0,.5);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  padding:8px;
-  font-weight:900;
-  font-size:clamp(13px,3.5vw,21px);
-  line-height:1.25;
-  pointer-events:none;
-}
-
-.wheel-message{
-  position:absolute;
-  z-index:8;
-  bottom:4px;
-  left:50%;
-  transform:translateX(-50%);
-  white-space:nowrap;
-  padding:9px 17px;
+.wheel-hint{
+  margin-top:-2px;
+  padding:9px 15px;
   border-radius:999px;
-  background:rgba(17,24,39,.82);
-  border:1px solid rgba(255,255,255,.18);
-  box-shadow:0 8px 25px rgba(0,0,0,.3);
+  background:rgba(0,0,0,.42);
+  border:1px solid rgba(255,255,255,.15);
+  color:#fff;
   font-size:13px;
-  font-weight:800;
-  pointer-events:none;
+  font-weight:700;
+  text-align:center;
 }
 
-.wheel-area.spinning{
-  cursor:pointer;
-}
-
-.panel{
-  border-radius:22px;
-  padding:16px;
-  background:rgba(0,0,0,.17);
-  border:1px solid rgba(255,255,255,.13);
-}
-
-.status{
+.wheel-status{
+  margin-top:10px;
+  text-align:center;
   color:var(--muted);
   font-size:13px;
-  margin-bottom:10px;
 }
 
 .result{
-  min-height:155px;
-  border-radius:19px;
+  margin-top:14px;
+  min-height:145px;
+  border-radius:20px;
   padding:16px;
-  background:rgba(255,255,255,.1);
+  background:rgba(255,255,255,.10);
   border:1px solid rgba(255,255,255,.14);
 }
 
@@ -411,7 +373,8 @@ button:disabled{
 
 .result h2{
   margin:0 0 7px;
-  font-size:24px;
+  font-size:25px;
+  word-break:break-word;
 }
 
 .meta{
@@ -435,8 +398,8 @@ button:disabled{
 
 .settings{
   display:grid;
-  gap:10px;
-  margin-top:14px;
+  gap:9px;
+  margin-top:13px;
 }
 
 .switch-row{
@@ -468,9 +431,9 @@ input[type=checkbox]{
   accent-color:var(--accent);
 }
 
-/* =========================================================
-   リスト
-========================================================= */
+/* =========================
+   セクション
+========================= */
 
 .section-head{
   display:flex;
@@ -478,7 +441,6 @@ input[type=checkbox]{
   justify-content:space-between;
   gap:10px;
   margin-bottom:12px;
-  flex-wrap:wrap;
 }
 
 .section-head h3{
@@ -505,13 +467,14 @@ input[type=checkbox]{
 
 .item-row{
   display:grid;
-  grid-template-columns:1fr auto;
+  grid-template-columns:minmax(0,1fr) auto;
   gap:10px;
   align-items:center;
 }
 
 .name{
   font-weight:800;
+  word-break:break-word;
 }
 
 .info{
@@ -545,15 +508,45 @@ input[type=checkbox]{
   font-size:11px;
 }
 
-.mini{
-  padding:7px 9px!important;
-  border-radius:10px!important;
-  font-size:11px!important;
+.shop-actions a{
+  padding:8px 10px;
 }
 
-/* =========================================================
+.filters{
+  display:grid;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.filter-row{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:8px;
+}
+
+@media(min-width:600px){
+  .filter-row{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+.filter-box{
+  padding:10px;
+  border-radius:14px;
+  background:rgba(0,0,0,.15);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.filter-box label{
+  display:block;
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:5px;
+}
+
+/* =========================
    コメント
-========================================================= */
+========================= */
 
 .comments{
   margin-top:10px;
@@ -593,9 +586,9 @@ input[type=checkbox]{
   font-size:11px;
 }
 
-/* =========================================================
+/* =========================
    モーダル
-========================================================= */
+========================= */
 
 .modal{
   position:fixed;
@@ -613,7 +606,7 @@ input[type=checkbox]{
 }
 
 .modal-box{
-  width:min(600px,100%);
+  width:min(560px,100%);
   max-height:90vh;
   overflow:auto;
   background:#1b1730;
@@ -642,9 +635,9 @@ input[type=checkbox]{
   border-radius:10px;
 }
 
-/* =========================================================
+/* =========================
    トースト
-========================================================= */
+========================= */
 
 .toast{
   position:fixed;
@@ -654,7 +647,7 @@ input[type=checkbox]{
   width:min(92vw,450px);
   padding:12px 15px;
   border-radius:15px;
-  background:rgba(17,24,39,.95);
+  background:rgba(17,24,39,.96);
   color:#fff;
   border:1px solid rgba(255,255,255,.18);
   box-shadow:0 20px 50px rgba(0,0,0,.35);
@@ -675,474 +668,531 @@ input[type=checkbox]{
   display:none!important;
 }
 
-.history-filter{
-  display:grid;
-  grid-template-columns:1fr;
-  gap:8px;
-  margin-bottom:12px;
-}
+/* スマホ専用調整 */
+@media(max-width:600px){
 
-@media(min-width:500px){
-  .history-filter{
-    grid-template-columns:1fr 1fr;
+  .app{
+    padding-left:10px;
+    padding-right:10px;
   }
-}
 
-.affiliation-badge{
-  display:inline-block;
-  margin-left:5px;
-  padding:3px 7px;
-  border-radius:999px;
-  background:rgba(96,165,250,.16);
-  color:#bfdbfe;
-  font-size:10px;
-}
+  .card{
+    border-radius:21px;
+    padding:13px;
+  }
 
-.guest-notice{
-  margin-top:8px;
-  padding:10px 12px;
-  border-radius:14px;
-  background:rgba(250,204,21,.10);
-  border:1px solid rgba(250,204,21,.2);
-  color:#fde68a;
-  font-size:12px;
-  line-height:1.6;
+  .roulette-card{
+    padding:7px;
+  }
+
+  .wheel-area{
+    width:96vw;
+  }
+
+  .pointer{
+    top:0;
+    border-left-width:17px;
+    border-right-width:17px;
+    border-top-width:35px;
+  }
+
+  .pointer::after{
+    left:-12px;
+    top:-32px;
+    width:24px;
+    height:24px;
+  }
+
+  .result h2{
+    font-size:22px;
+  }
+
+  .topbar{
+    justify-content:center;
+  }
 }
 </style>
 </head>
 
 <body>
 
-<!-- =========================================================
+<!-- ======================================================
      ログイン画面
-========================================================= -->
+====================================================== -->
 
 <div id="authView" class="app">
 
-<header>
-  <div class="badge">🍽️ 恵比寿ランチルーレット</div>
+  <header>
+    <div class="badge">🍽️ 恵比寿ランチ</div>
 
-  <h1>
-    今日のランチを<br>
-    <span>運命で決める</span>
-  </h1>
+    <h1>
+      今日のランチを<br>
+      <span>運命で決める</span>
+    </h1>
 
-  <p class="lead">
-    恵比寿ネオナート周辺の候補から、みんなでランチを決めよう。
-  </p>
-</header>
+    <p class="lead">
+      恵比寿ネオナート周辺の候補から、
+      みんなでランチを決めよう。
+    </p>
+  </header>
 
-<div class="card auth">
+  <div class="card auth">
 
-  <h2 id="authTitle">ログイン</h2>
+    <h2 id="authTitle">ログイン</h2>
 
-  <div id="authMessage"></div>
+    <div id="authMessage"></div>
 
-  <div id="usernameField" class="field hidden">
-    <label>ユーザー名</label>
-    <input
-      id="username"
-      maxlength="30"
-      placeholder="例：Yusuke">
+    <div id="usernameField" class="field hidden">
+      <label>ユーザー名</label>
+      <input
+        id="username"
+        maxlength="30"
+        placeholder="例：Yusuke"
+      >
+    </div>
+
+    <div id="affiliationField" class="field hidden">
+      <label>所属</label>
+
+      <select id="affiliation">
+        <option value="">所属を選択してください</option>
+        <option value="国際事業部前半">国際事業部前半</option>
+        <option value="国際事業部後半">国際事業部後半</option>
+        <option value="その他">その他</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>メールアドレス</label>
+
+      <input
+        id="email"
+        type="email"
+        autocomplete="email"
+        placeholder="you@example.com"
+      >
+    </div>
+
+    <div class="field">
+      <label>パスワード</label>
+
+      <input
+        id="password"
+        type="password"
+        autocomplete="current-password"
+        placeholder="6文字以上"
+      >
+    </div>
+
+    <div class="btns">
+
+      <button id="authBtn">
+        ログイン
+      </button>
+
+      <button id="toggleAuth" class="secondary">
+        新規登録はこちら
+      </button>
+
+      <button id="guestBtn" class="secondary">
+        👀 ゲストとして見る
+      </button>
+
+    </div>
+
+    <p class="hint">
+      ゲストは店舗一覧とルーレットを利用できます。
+      履歴の登録・コメント・店舗編集にはログインしてください。
+    </p>
+
   </div>
-
-  <div id="affiliationField" class="field hidden">
-    <label>所属</label>
-    <select id="affiliation">
-      <option value="">所属を選択</option>
-      <option value="国際事業部前半">国際事業部前半</option>
-      <option value="国際事業部後半">国際事業部後半</option>
-      <option value="その他">その他</option>
-    </select>
-  </div>
-
-  <div class="field">
-    <label>メールアドレス</label>
-    <input
-      id="email"
-      type="email"
-      autocomplete="email"
-      placeholder="you@example.com">
-  </div>
-
-  <div class="field">
-    <label>パスワード</label>
-    <input
-      id="password"
-      type="password"
-      autocomplete="current-password"
-      placeholder="6文字以上">
-  </div>
-
-  <div class="btns">
-
-    <button id="authBtn">
-      ログイン
-    </button>
-
-    <button id="toggleAuth" class="secondary">
-      新規登録はこちら
-    </button>
-
-    <button id="guestBtn" class="secondary">
-      👀 ゲストとして見る
-    </button>
-
-  </div>
-
-  <p class="hint">
-    ゲストでは店舗を見る・ルーレットを回すことができます。
-  </p>
 
 </div>
 
-</div>
 
-
-<!-- =========================================================
+<!-- ======================================================
      アプリ
-========================================================= -->
+====================================================== -->
 
 <div id="appView" class="app hidden">
 
-<header>
+  <header>
 
-  <div class="badge">
-    🍽️ 恵比寿ランチルーレット
-  </div>
-
-  <h1>
-    今日のランチを<br>
-    <span>運命で決める</span>
-  </h1>
-
-  <p class="lead">
-    みんなの候補から、今日のランチを運命で決定。
-  </p>
-
-</header>
-
-<div class="topbar">
-
-  <span id="userPill" class="user-pill"></span>
-
-  <button id="logoutBtn" class="secondary mini">
-    ログアウト
-  </button>
-
-  <button id="loginFromGuestBtn" class="secondary mini hidden">
-    ログイン
-  </button>
-
-</div>
-
-
-<!-- =========================================================
-     ルーレット
-========================================================= -->
-
-<section class="card">
-
-  <div class="roulette">
-
-    <div class="wheel-wrap">
-
-      <div class="pointer"></div>
-
-      <div id="wheelArea" class="wheel-area">
-
-        <canvas
-          id="wheelCanvas"
-          width="900"
-          height="900">
-        </canvas>
-
-        <div id="wheelCenter" class="wheel-center">
-          TAP<br>START
-        </div>
-
-        <div id="wheelMessage" class="wheel-message">
-          🎰 タップでスタート
-        </div>
-
-      </div>
-
+    <div class="badge">
+      🍽️ 恵比寿ランチ
     </div>
 
+    <h1>
+      今日のランチを<br>
+      <span>運命で決める</span>
+    </h1>
 
-    <div class="panel">
+    <p class="lead">
+      みんなの候補から、今日のランチを運命で決定。
+    </p>
 
-      <div id="status" class="status">
-        候補を読み込み中...
-      </div>
-
-      <div id="result" class="result">
-
-        <span class="genre">
-          READY
-        </span>
-
-        <h2>
-          ルーレットを回してね
-        </h2>
-
-        <div class="meta">
-          条件に合うお店から選びます。
-        </div>
-
-      </div>
+  </header>
 
 
-      <div class="actions">
+  <div class="topbar">
 
-        <button id="spinBtn">
-          🎲 今日のランチを決める
-        </button>
-
-        <button
-          id="visitedBtn"
-          class="secondary"
-          disabled>
-          ✅ 行った！
-        </button>
-
-        <a
-          id="mapBtn"
-          class="link-btn"
-          href="#"
-          target="_blank"
-          rel="noopener"
-          style="display:none">
-          📍 地図で見る
-        </a>
-
-        <button
-          id="commentBtn"
-          class="secondary"
-          disabled>
-          💬 コメントを見る
-        </button>
-
-      </div>
-
-      <div id="guestNotice" class="guest-notice hidden">
-        👀 ゲストモードでは、店舗の閲覧とルーレットを利用できます。
-      </div>
-
-    </div>
-
-  </div>
-
-
-  <div class="settings">
-
-    <label class="switch-row">
-
-      <div>
-        <strong>
-          今週行った店を避ける
-        </strong>
-
-        <small>
-          選択中の所属を対象
-        </small>
-      </div>
-
-      <input
-        id="avoidWeekVisited"
-        type="checkbox"
-        checked>
-
-    </label>
-
-
-    <label class="switch-row">
-
-      <div>
-        <strong>
-          昨日と同じジャンルを避ける
-        </strong>
-
-        <small>
-          選択中の所属を対象
-        </small>
-      </div>
-
-      <input
-        id="avoidYesterdayGenre"
-        type="checkbox"
-        checked>
-
-    </label>
-
-  </div>
-
-</section>
-
-
-<!-- =========================================================
-     今週の履歴
-========================================================= -->
-
-<section class="card">
-
-  <div class="section-head">
-
-    <h3>
-      📒 ランチ履歴
-    </h3>
-
-    <span
-      id="historyCount"
-      class="count">
+    <span id="userPill" class="user-pill">
+      👀 ゲスト
     </span>
-
-  </div>
-
-
-  <div class="history-filter">
-
-    <select id="historyPeriod">
-
-      <option value="thisWeek">
-        今週
-      </option>
-
-      <option value="lastWeek">
-        先週
-      </option>
-
-      <option value="all">
-        すべて
-      </option>
-
-    </select>
-
-
-    <select id="historyAffiliation">
-
-      <option value="all">
-        全所属
-      </option>
-
-    </select>
-
-  </div>
-
-
-  <div id="historyList" class="list"></div>
-
-</section>
-
-
-<!-- =========================================================
-     直接記録
-========================================================= -->
-
-<section
-  id="recordCard"
-  class="card">
-
-  <div class="section-head">
-
-    <h3>
-      📝 行った店を記録
-    </h3>
-
-  </div>
-
-  <div class="field">
-
-    <label>
-      お店
-    </label>
-
-    <select id="recordShop"></select>
-
-  </div>
-
-  <div class="field">
-
-    <label>
-      日付
-    </label>
-
-    <input
-      id="recordDate"
-      type="date">
-
-  </div>
-
-  <button id="directRecordBtn">
-    ✅ この店に行った
-  </button>
-
-</section>
-
-
-<!-- =========================================================
-     店舗一覧
-========================================================= -->
-
-<section class="card">
-
-  <div class="section-head">
-
-    <h3>
-      ⭐ 候補リスト
-    </h3>
-
-    <span
-      id="shopCount"
-      class="count">
-    </span>
-
-  </div>
-
-  <div id="shopList" class="list"></div>
-
-</section>
-
-
-<!-- =========================================================
-     店舗管理
-========================================================= -->
-
-<section
-  id="adminCard"
-  class="card">
-
-  <div class="section-head">
-
-    <h3>
-      🏪 店舗管理
-    </h3>
 
     <button
-      id="addShopBtn"
-      class="mini">
-      ＋ お店を追加
+      id="profileBtn"
+      class="secondary mini hidden"
+    >
+      👤 所属設定
+    </button>
+
+    <button
+      id="loginFromGuestBtn"
+      class="secondary mini hidden"
+    >
+      ログイン
+    </button>
+
+    <button
+      id="logoutBtn"
+      class="secondary mini hidden"
+    >
+      ログアウト
     </button>
 
   </div>
 
-  <p class="hint">
-    ログインユーザーは店舗の追加・編集・削除ができます。
-    編集内容は履歴として保存されます。
-  </p>
 
-</section>
+  <!-- =====================
+       ルーレット
+  ====================== -->
+
+  <section class="card roulette-card">
+
+    <div class="roulette-wrap">
+
+      <div id="wheelArea" class="wheel-area">
+
+        <div class="pointer"></div>
+
+        <canvas id="wheelCanvas"></canvas>
+
+      </div>
+
+      <div id="wheelHint" class="wheel-hint">
+        🎰 ルーレットをタップしてスタート
+      </div>
+
+      <div id="status" class="wheel-status">
+        店舗を読み込み中...
+      </div>
+
+    </div>
+
+
+    <div
+      id="result"
+      class="result"
+    >
+
+      <span class="genre">
+        READY
+      </span>
+
+      <h2>
+        ルーレットを回してね
+      </h2>
+
+      <div class="meta">
+        条件に合うお店から選びます。
+      </div>
+
+    </div>
+
+
+    <div class="actions">
+
+      <button
+        id="spinBtn"
+      >
+        🎲 今日のランチを決める
+      </button>
+
+      <button
+        id="visitedBtn"
+        class="secondary"
+        disabled
+      >
+        ✅ 行った！
+      </button>
+
+      <a
+        id="mapBtn"
+        class="link-btn secondary"
+        href="#"
+        target="_blank"
+        rel="noopener"
+        style="display:none"
+      >
+        📍 地図で見る
+      </a>
+
+      <button
+        id="commentBtn"
+        class="secondary"
+        disabled
+      >
+        💬 コメント
+      </button>
+
+    </div>
+
+
+    <div class="settings">
+
+      <label class="switch-row">
+
+        <div>
+          <strong>
+            今週行った店を避ける
+          </strong>
+
+          <small>
+            下の所属設定の範囲で判定します
+          </small>
+        </div>
+
+        <input
+          id="avoidWeekVisited"
+          type="checkbox"
+          checked
+        >
+
+      </label>
+
+
+      <label class="switch-row">
+
+        <div>
+          <strong>
+            昨日と同じジャンルを避ける
+          </strong>
+
+          <small>
+            対象範囲の昨日の履歴から判定します
+          </small>
+        </div>
+
+        <input
+          id="avoidYesterdayGenre"
+          type="checkbox"
+          checked
+        >
+
+      </label>
+
+    </div>
+
+  </section>
+
+
+  <!-- =====================
+       履歴
+  ====================== -->
+
+  <section class="card">
+
+    <div class="section-head">
+
+      <h3>
+        📒 ランチ履歴
+      </h3>
+
+      <span
+        id="historyCount"
+        class="count"
+      ></span>
+
+    </div>
+
+
+    <div class="filters">
+
+      <div class="filter-row">
+
+        <div class="filter-box">
+
+          <label>
+            履歴を見る範囲
+          </label>
+
+          <select id="historyAffiliationFilter">
+
+            <option value="all">
+              全所属
+            </option>
+
+            <option value="mine">
+              自分の所属
+            </option>
+
+            <option value="国際事業部前半">
+              国際事業部前半
+            </option>
+
+            <option value="国際事業部後半">
+              国際事業部後半
+            </option>
+
+            <option value="その他">
+              その他
+            </option>
+
+          </select>
+
+        </div>
+
+
+        <div class="filter-box">
+
+          <label>
+            表示期間
+          </label>
+
+          <select id="historyPeriod">
+
+            <option value="this">
+              今週
+            </option>
+
+            <option value="last">
+              先週
+            </option>
+
+            <option value="all">
+              すべて
+            </option>
+
+          </select>
+
+        </div>
+
+      </div>
+
+
+      <div class="filter-box">
+
+        <label>
+          重複回避の対象
+        </label>
+
+        <select id="avoidAffiliationScope">
+
+          <option value="mine">
+            自分の所属
+          </option>
+
+          <option value="all">
+            全所属
+          </option>
+
+          <option value="国際事業部前半">
+            国際事業部前半
+          </option>
+
+          <option value="国際事業部後半">
+            国際事業部後半
+          </option>
+
+          <option value="その他">
+            その他
+          </option>
+
+        </select>
+
+      </div>
+
+    </div>
+
+
+    <div
+      id="historyList"
+      class="list"
+    ></div>
+
+  </section>
+
+
+  <!-- =====================
+       店舗
+  ====================== -->
+
+  <section class="card">
+
+    <div class="section-head">
+
+      <h3>
+        ⭐ 候補リスト
+      </h3>
+
+      <span
+        id="shopCount"
+        class="count"
+      ></span>
+
+    </div>
+
+
+    <div
+      id="shopList"
+      class="list"
+    ></div>
+
+  </section>
+
+
+  <!-- =====================
+       管理
+  ====================== -->
+
+  <section
+    id="shopAdminCard"
+    class="card hidden"
+  >
+
+    <div class="section-head">
+
+      <h3>
+        🏪 店舗管理
+      </h3>
+
+      <button
+        id="addShopBtn"
+        class="mini"
+      >
+        ＋ お店を追加
+      </button>
+
+    </div>
+
+    <p class="hint">
+      ログインユーザーは店舗を追加・編集・削除できます。
+    </p>
+
+  </section>
 
 </div>
 
 
-<!-- =========================================================
+<!-- ======================================================
      コメントモーダル
-========================================================= -->
+====================================================== -->
 
 <div
   id="commentModal"
-  class="modal">
+  class="modal"
+>
 
   <div class="modal-box">
 
@@ -1154,19 +1204,23 @@ input[type=checkbox]{
 
       <button
         class="x"
-        onclick="closeModal()">
+        onclick="closeModal()"
+      >
         閉じる
       </button>
 
     </div>
 
-    <div
-      id="commentsList"
-      class="comments">
-    </div>
 
     <div
-      id="commentInputArea">
+      id="commentsList"
+      class="comments"
+    ></div>
+
+
+    <div
+      id="commentInputArea"
+    >
 
       <div class="field">
 
@@ -1177,12 +1231,14 @@ input[type=checkbox]{
         <textarea
           id="commentBody"
           maxlength="1000"
-          placeholder="このお店について一言">
-        </textarea>
+          placeholder="このお店について一言"
+        ></textarea>
 
       </div>
 
-      <button id="sendCommentBtn">
+      <button
+        id="sendCommentBtn"
+      >
         コメントする
       </button>
 
@@ -1193,13 +1249,14 @@ input[type=checkbox]{
 </div>
 
 
-<!-- =========================================================
-     店舗編集モーダル
-========================================================= -->
+<!-- ======================================================
+     店舗モーダル
+====================================================== -->
 
 <div
   id="shopModal"
-  class="modal">
+  class="modal"
+>
 
   <div class="modal-box">
 
@@ -1211,15 +1268,19 @@ input[type=checkbox]{
 
       <button
         class="x"
-        onclick="closeShopModal()">
+        onclick="closeShopModal()"
+      >
         閉じる
       </button>
 
     </div>
 
+
     <input
       type="hidden"
-      id="shopId">
+      id="shopId"
+    >
+
 
     <div class="field">
 
@@ -1227,9 +1288,13 @@ input[type=checkbox]{
         店名
       </label>
 
-      <input id="shopName">
+      <input
+        id="shopName"
+        placeholder="例：板蕎麦 香り家"
+      >
 
     </div>
+
 
     <div class="field">
 
@@ -1237,9 +1302,13 @@ input[type=checkbox]{
         ジャンル
       </label>
 
-      <input id="shopGenre">
+      <input
+        id="shopGenre"
+        placeholder="例：そば"
+      >
 
     </div>
+
 
     <div class="field">
 
@@ -1253,9 +1322,11 @@ input[type=checkbox]{
         min="0"
         max="5"
         step="0.01"
-        value="3.50">
+        value="3.50"
+      >
 
     </div>
+
 
     <div class="field">
 
@@ -1263,9 +1334,13 @@ input[type=checkbox]{
         メモ
       </label>
 
-      <textarea id="shopNote"></textarea>
+      <textarea
+        id="shopNote"
+        placeholder="お店の特徴など"
+      ></textarea>
 
     </div>
+
 
     <div class="field">
 
@@ -1275,9 +1350,11 @@ input[type=checkbox]{
 
       <input
         id="shopMap"
-        placeholder="https://www.google.com/maps/search/?api=1&query=...">
+        placeholder="https://www.google.com/maps/..."
+      >
 
     </div>
+
 
     <div class="btns two">
 
@@ -1287,7 +1364,8 @@ input[type=checkbox]{
 
       <button
         class="danger"
-        onclick="closeShopModal()">
+        onclick="closeShopModal()"
+      >
         キャンセル
       </button>
 
@@ -1298,34 +1376,79 @@ input[type=checkbox]{
 </div>
 
 
-<!-- =========================================================
-     編集履歴モーダル
-========================================================= -->
+<!-- ======================================================
+     プロフィールモーダル
+====================================================== -->
 
 <div
-  id="editHistoryModal"
-  class="modal">
+  id="profileModal"
+  class="modal"
+>
 
   <div class="modal-box">
 
     <div class="modal-head">
 
-      <h3 id="editHistoryTitle">
-        📝 編集履歴
+      <h3>
+        👤 プロフィール
       </h3>
 
       <button
         class="x"
-        onclick="closeEditHistory()">
+        onclick="closeProfileModal()"
+      >
         閉じる
       </button>
 
     </div>
 
-    <div
-      id="editHistoryList"
-      class="list">
+
+    <div class="field">
+
+      <label>
+        ユーザー名
+      </label>
+
+      <input
+        id="profileUsername"
+        maxlength="30"
+      >
+
     </div>
+
+
+    <div class="field">
+
+      <label>
+        所属
+      </label>
+
+      <select id="profileAffiliation">
+
+        <option value="">
+          所属を選択してください
+        </option>
+
+        <option value="国際事業部前半">
+          国際事業部前半
+        </option>
+
+        <option value="国際事業部後半">
+          国際事業部後半
+        </option>
+
+        <option value="その他">
+          その他
+        </option>
+
+      </select>
+
+    </div>
+
+
+    <button id="saveProfileBtn">
+      保存
+    </button>
 
   </div>
 
@@ -1334,12 +1457,11 @@ input[type=checkbox]{
 
 <div
   id="toast"
-  class="toast">
-</div>
+  class="toast"
+></div>
 
 
 <script>
-
 /* =========================================================
    Supabase
 ========================================================= */
@@ -1350,7 +1472,7 @@ const SUPABASE_URL =
 const SUPABASE_KEY =
   "sb_publishable_QeR1rRiE7G7I3N2MyKHfVA_obH27dEC";
 
-const {createClient} = supabase;
+const { createClient } = supabase;
 
 const sb = createClient(
   SUPABASE_URL,
@@ -1362,69 +1484,65 @@ const sb = createClient(
    状態
 ========================================================= */
 
-const $ = id =>
-  document.getElementById(id);
-
 let currentUser = null;
 let currentProfile = null;
 
-let currentShop = null;
-
 let shops = [];
 let history = [];
-let profiles = [];
+
+let currentShop = null;
+
+let wheelState = "idle";
+let wheelRotation = 0;
+let wheelStartTime = 0;
+let wheelAnimation = null;
+
+let candidates = [];
 
 let authMode = "login";
-
-let guestMode = false;
-
-let wheelRotation = 0;
-let wheelVelocity = 0;
-let wheelAnimation = null;
-let wheelStopping = false;
-
-let lastFrameTime = 0;
 
 
 /* =========================================================
    共通
 ========================================================= */
 
-function esc(v){
+const $ = id =>
+  document.getElementById(id);
 
+
+function esc(v){
   return String(v ?? "")
     .replaceAll("&","&amp;")
     .replaceAll("<","&lt;")
     .replaceAll(">","&gt;")
     .replaceAll('"',"&quot;")
     .replaceAll("'","&#039;");
-
 }
 
 
 function toast(msg){
 
-  const el = $("toast");
+  $("toast").textContent = msg;
 
-  el.textContent = msg;
-
-  el.classList.add("show");
+  $("toast").classList.add("show");
 
   setTimeout(()=>{
-    el.classList.remove("show");
+    $("toast").classList.remove("show");
   },2500);
-
 }
 
 
-function dateKey(d = new Date()){
+function dateKey(d=new Date()){
 
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-
+  return [
+    d.getFullYear(),
+    String(d.getMonth()+1).padStart(2,"0"),
+    String(d.getDate()).padStart(2,"0")
+  ].join("-");
 }
 
 
-function weekStart(d = new Date()){
+function weekStart(d=new Date()){
 
   const x = new Date(d);
 
@@ -1438,75 +1556,74 @@ function weekStart(d = new Date()){
   x.setHours(0,0,0,0);
 
   return x;
-
 }
 
 
-function lastWeekStart(){
+function addDays(date,n){
 
-  const d = weekStart();
+  const d = new Date(date);
 
-  d.setDate(d.getDate()-7);
+  d.setDate(d.getDate()+n);
 
   return d;
-
 }
 
 
-function isThisWeek(date){
-
-  if(!date) return false;
+function isDateBetween(
+  dateString,
+  start,
+  end
+){
 
   const d =
-    new Date(date+"T00:00:00");
+    new Date(dateString+"T00:00:00");
 
-  const st =
-    weekStart();
-
-  const en =
-    new Date(st);
-
-  en.setDate(
-    en.getDate()+7
-  );
-
-  return d >= st && d < en;
-
+  return d >= start && d < end;
 }
 
 
-function isLastWeek(date){
-
-  if(!date) return false;
-
-  const d =
-    new Date(date+"T00:00:00");
-
-  const st =
-    lastWeekStart();
-
-  const en =
-    new Date(st);
-
-  en.setDate(
-    en.getDate()+7
-  );
-
-  return d >= st && d < en;
-
-}
-
-
-function yesterday(){
+function getYesterday(){
 
   const d = new Date();
 
-  d.setDate(
-    d.getDate()-1
-  );
+  d.setDate(d.getDate()-1);
 
   return dateKey(d);
+}
 
+
+function weightedRandom(list){
+
+  if(!list.length) return null;
+
+  const weights =
+    list.map(s =>
+      Math.max(
+        1,
+        (Number(s.rating)||0)+1
+      )
+    );
+
+  const total =
+    weights.reduce(
+      (a,b)=>a+b,
+      0
+    );
+
+  let r =
+    Math.random()*total;
+
+  for(let i=0;i<list.length;i++){
+
+    r -= weights[i];
+
+    if(r<=0){
+      return list[i];
+    }
+
+  }
+
+  return list[list.length-1];
 }
 
 
@@ -1514,60 +1631,24 @@ function yesterday(){
    認証
 ========================================================= */
 
-async function init(){
+function showAuth(){
 
-  const {
-    data:{
-      session
-    }
-  } = await sb.auth.getSession();
+  $("authView")
+    .classList.remove("hidden");
 
-  if(session){
-
-    await enterApp(
-      session.user
-    );
-
-  }else{
-
-    showAuth();
-
-  }
-
-  sb.auth.onAuthStateChange(
-    async(_event,session)=>{
-
-      if(session){
-
-        await enterApp(
-          session.user
-        );
-
-      }else{
-
-        showAuth();
-
-      }
-
-    }
-  );
+  $("appView")
+    .classList.add("hidden");
 
 }
 
 
-function showAuth(){
-
-  currentUser = null;
-  currentProfile = null;
-  guestMode = false;
+function showApp(){
 
   $("authView")
-    .classList
-    .remove("hidden");
+    .classList.add("hidden");
 
   $("appView")
-    .classList
-    .add("hidden");
+    .classList.remove("hidden");
 
 }
 
@@ -1589,40 +1670,38 @@ function setAuthMode(mode){
 
   authMode = mode;
 
-  const reg =
+  const signup =
     mode === "signup";
 
   $("authTitle").textContent =
-    reg
-      ? "新規登録"
-      : "ログイン";
+    signup ? "新規登録" : "ログイン";
 
   $("authBtn").textContent =
-    reg
+    signup
       ? "アカウントを作成"
       : "ログイン";
 
   $("toggleAuth").textContent =
-    reg
+    signup
       ? "ログインはこちら"
       : "新規登録はこちら";
 
   $("usernameField")
-    .classList
-    .toggle("hidden",!reg);
+    .classList.toggle(
+      "hidden",
+      !signup
+    );
 
   $("affiliationField")
-    .classList
-    .toggle("hidden",!reg);
+    .classList.toggle(
+      "hidden",
+      !signup
+    );
 
   $("authMessage").innerHTML = "";
 
 }
 
-
-/* =========================================================
-   ログイン
-========================================================= */
 
 $("toggleAuth").onclick = ()=>{
 
@@ -1635,25 +1714,20 @@ $("toggleAuth").onclick = ()=>{
 };
 
 
-$("authBtn").onclick = async()=>{
+$("authBtn").onclick =
+async ()=>{
 
   const email =
-    $("email")
-      .value
-      .trim();
+    $("email").value.trim();
 
   const password =
-    $("password")
-      .value;
+    $("password").value;
 
   const username =
-    $("username")
-      .value
-      .trim();
+    $("username").value.trim();
 
   const affiliation =
-    $("affiliation")
-      .value;
+    $("affiliation").value;
 
   $("authMessage").innerHTML = "";
 
@@ -1661,8 +1735,11 @@ $("authBtn").onclick = async()=>{
     !email ||
     !password ||
     (
-      authMode === "signup" &&
-      !username
+      authMode==="signup" &&
+      (
+        !username ||
+        !affiliation
+      )
     )
   ){
 
@@ -1672,44 +1749,49 @@ $("authBtn").onclick = async()=>{
     );
 
     return;
-
   }
+
 
   $("authBtn").disabled = true;
 
+
   try{
 
-    if(authMode === "signup"){
+    if(authMode==="signup"){
 
       const {
         data,
         error
       } =
-        await sb.auth.signUp({
+      await sb.auth.signUp({
 
-          email,
-          password,
+        email,
+        password,
 
-          options:{
-            data:{
-              username,
-              affiliation
-            }
+        options:{
+          data:{
+            username,
+            affiliation
           }
+        }
 
-        });
+      });
 
-      if(error)
-        throw error;
+      if(error) throw error;
+
 
       if(data.session){
 
-        toast("登録しました！");
+        await createOrLoadProfile(
+          data.user,
+          username,
+          affiliation
+        );
 
       }else{
 
         showAuthMessage(
-          "登録しました。メール確認が必要な設定の場合は、届いたメールを確認してください。"
+          "登録しました。メール確認が必要な場合は、届いたメールを確認してください。"
         );
 
       }
@@ -1717,15 +1799,23 @@ $("authBtn").onclick = async()=>{
     }else{
 
       const {
+        data,
         error
       } =
-        await sb.auth.signInWithPassword({
-          email,
-          password
-        });
+      await sb.auth.signInWithPassword({
+        email,
+        password
+      });
 
-      if(error)
-        throw error;
+      if(error) throw error;
+
+      if(data.user){
+
+        await enterApp(
+          data.user
+        );
+
+      }
 
     }
 
@@ -1750,101 +1840,124 @@ $("authBtn").onclick = async()=>{
 ========================================================= */
 
 $("guestBtn").onclick =
-  async()=>{
+async ()=>{
 
-    $("guestBtn").disabled = true;
+  currentUser = null;
+  currentProfile = null;
 
-    try{
+  showApp();
 
-      /*
-       * Supabase Anonymous Sign Inを使用。
-       * ゲストもauthenticated扱いになるため、
-       * shopsの閲覧RLSをauthenticatedに許可しておけば
-       * 店舗一覧を取得できる。
-       */
+  setupGuestUI();
 
-      const {
-        data,
-        error
-      } =
-        await sb.auth.signInAnonymously();
+  await refreshAll();
 
-      if(error)
-        throw error;
-
-      if(data.user){
-
-        guestMode = true;
-
-        await enterApp(
-          data.user
-        );
-
-      }
-
-    }catch(e){
-
-      showAuthMessage(
-        "ゲストモードを開始できませんでした。SupabaseのAnonymous Sign-Insが有効か確認してください。",
-        true
-      );
-
-    }finally{
-
-      $("guestBtn").disabled = false;
-
-    }
-
-  };
-
-
-$("logoutBtn").onclick =
-  async()=>{
-
-    await sb.auth.signOut();
-
-  };
+};
 
 
 $("loginFromGuestBtn").onclick =
-  async()=>{
+()=>{
 
-    await sb.auth.signOut();
+  currentUser = null;
+  currentProfile = null;
 
-  };
+  showAuth();
+
+  setAuthMode("login");
+
+};
+
+
+function setupGuestUI(){
+
+  $("userPill").textContent =
+    "👀 ゲスト";
+
+  $("loginFromGuestBtn")
+    .classList.remove("hidden");
+
+  $("logoutBtn")
+    .classList.add("hidden");
+
+  $("profileBtn")
+    .classList.add("hidden");
+
+  $("shopAdminCard")
+    .classList.add("hidden");
+
+  $("visitedBtn").disabled =
+    true;
+
+}
 
 
 /* =========================================================
-   アプリへ
+   プロフィール
 ========================================================= */
 
-async function enterApp(user){
+async function createOrLoadProfile(
+  user,
+  usernameFallback,
+  affiliationFallback
+){
 
-  currentUser = user;
+  let {
+    data:profile,
+    error
+  } =
+  await sb
+    .from("profiles")
+    .select("*")
+    .eq("id",user.id)
+    .maybeSingle();
 
-  guestMode =
-    user.is_anonymous === true;
+  if(error){
 
-  if(guestMode){
+    showAuthMessage(
+      error.message,
+      true
+    );
 
-    currentProfile = null;
+    return;
 
-  }else{
+  }
 
-    let {
-      data:profile,
-      error
-    } =
+
+  if(!profile){
+
+    const username =
+      (
+        usernameFallback ||
+        user.user_metadata?.username ||
+        user.email?.split("@")[0] ||
+        "user"
+      ).slice(0,30);
+
+
+    const affiliation =
+      affiliationFallback ||
+      user.user_metadata?.affiliation ||
+      "その他";
+
+
+    const ins =
       await sb
         .from("profiles")
-        .select("*")
-        .eq("id",user.id)
-        .maybeSingle();
+        .insert({
 
-    if(error){
+          id:user.id,
+          username,
+          affiliation
+
+        });
+
+
+    if(
+      ins.error &&
+      ins.error.code !== "23505"
+    ){
 
       showAuthMessage(
-        error.message,
+        ins.error.message,
         true
       );
 
@@ -1852,181 +1965,202 @@ async function enterApp(user){
 
     }
 
-    if(!profile){
 
-      const username =
-        (
-          user.user_metadata?.username ||
-          user.email?.split("@")[0] ||
-          "user"
-        )
-        .slice(0,30);
-
-      const affiliation =
-        user.user_metadata?.affiliation ||
-        "";
-
-      let ins =
-        await sb
-          .from("profiles")
-          .insert({
-            id:user.id,
-            username,
-            affiliation
-          });
-
-      /*
-       * affiliation列がまだない場合にも
-       * ログイン自体はできるようにする。
-       */
-
-      if(
-        ins.error &&
-        ins.error.code === "42703"
-      ){
-
-        ins =
-          await sb
-            .from("profiles")
-            .insert({
-              id:user.id,
-              username
-            });
-
-      }
-
-      if(
-        ins.error &&
-        ins.error.code !== "23505"
-      ){
-
-        showAuthMessage(
-          ins.error.message,
-          true
-        );
-
-        return;
-
-      }
-
-      ({
-        data:profile
-      } =
-        await sb
-          .from("profiles")
-          .select("*")
-          .eq("id",user.id)
-          .single());
-
-    }
-
-    currentProfile =
-      profile || {};
+    ({
+      data:profile
+    } =
+    await sb
+      .from("profiles")
+      .select("*")
+      .eq("id",user.id)
+      .single());
 
   }
 
-  $("authView")
-    .classList
-    .add("hidden");
 
-  $("appView")
-    .classList
-    .remove("hidden");
+  currentProfile =
+    profile;
 
-  updateUserUI();
+}
+
+
+async function enterApp(user){
+
+  currentUser = user;
+
+  await createOrLoadProfile(
+    user,
+    user.user_metadata?.username,
+    user.user_metadata?.affiliation
+  );
+
+  if(!currentProfile){
+
+    return;
+
+  }
+
+
+  showApp();
+
+  setupLoggedInUI();
 
   await refreshAll();
 
 }
 
 
-/* =========================================================
-   ユーザー表示
-========================================================= */
+function setupLoggedInUI(){
 
-function updateUserUI(){
+  const affiliation =
+    currentProfile?.affiliation ||
+    "所属未設定";
 
-  if(guestMode){
+  $("userPill").textContent =
+    `👤 ${currentProfile.username} / ${affiliation}`;
 
-    $("userPill").textContent =
-      "👀 ゲスト";
+  $("loginFromGuestBtn")
+    .classList.add("hidden");
 
-    $("logoutBtn")
-      .classList
-      .add("hidden");
+  $("logoutBtn")
+    .classList.remove("hidden");
 
-    $("loginFromGuestBtn")
-      .classList
-      .remove("hidden");
+  $("profileBtn")
+    .classList.remove("hidden");
 
-    $("guestNotice")
-      .classList
-      .remove("hidden");
-
-    $("recordCard")
-      .classList
-      .add("hidden");
-
-    $("adminCard")
-      .classList
-      .add("hidden");
-
-  }else{
-
-    const username =
-      currentProfile?.username ||
-      currentUser?.email ||
-      "ユーザー";
-
-    const affiliation =
-      currentProfile?.affiliation ||
-      "未設定";
-
-    $("userPill").textContent =
-      `👤 ${username} / ${affiliation}`;
-
-    $("logoutBtn")
-      .classList
-      .remove("hidden");
-
-    $("loginFromGuestBtn")
-      .classList
-      .add("hidden");
-
-    $("guestNotice")
-      .classList
-      .add("hidden");
-
-    $("recordCard")
-      .classList
-      .remove("hidden");
-
-    $("adminCard")
-      .classList
-      .remove("hidden");
-
-  }
+  $("shopAdminCard")
+    .classList.remove("hidden");
 
 }
 
 
+$("profileBtn").onclick =
+()=>{
+
+  $("profileUsername").value =
+    currentProfile?.username || "";
+
+  $("profileAffiliation").value =
+    currentProfile?.affiliation || "";
+
+  $("profileModal")
+    .classList.add("show");
+
+};
+
+
+function closeProfileModal(){
+
+  $("profileModal")
+    .classList.remove("show");
+
+}
+
+
+$("saveProfileBtn").onclick =
+async ()=>{
+
+  if(!currentUser) return;
+
+
+  const username =
+    $("profileUsername")
+      .value
+      .trim();
+
+  const affiliation =
+    $("profileAffiliation")
+      .value;
+
+
+  if(!username || !affiliation){
+
+    toast(
+      "ユーザー名と所属を入力してください。"
+    );
+
+    return;
+
+  }
+
+
+  const {
+    data,
+    error
+  } =
+  await sb
+    .from("profiles")
+    .update({
+      username,
+      affiliation
+    })
+    .eq("id",currentUser.id)
+    .select("*")
+    .single();
+
+
+  if(error){
+
+    toast(
+      "プロフィール更新に失敗: "+
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  currentProfile = data;
+
+  closeProfileModal();
+
+  setupLoggedInUI();
+
+  renderHistory();
+
+  updateStatus();
+
+  toast("プロフィールを更新しました。");
+
+};
+
+
+$("logoutBtn").onclick =
+async ()=>{
+
+  await sb.auth.signOut();
+
+  currentUser = null;
+
+  currentProfile = null;
+
+  showAuth();
+
+};
+
+
 /* =========================================================
-   データ読み込み
+   データ取得
 ========================================================= */
 
 async function refreshAll(){
 
   await loadShops();
 
-  await loadProfiles();
+  if(currentUser){
 
-  await loadHistory();
+    await loadHistory();
 
-  renderRecordShopSelect();
+  }else{
+
+    history = [];
+
+    renderHistory();
+
+  }
 
   updateStatus();
-
-  drawWheel();
 
 }
 
@@ -2037,15 +2171,11 @@ async function loadShops(){
     data,
     error
   } =
-    await sb
-      .from("shops")
-      .select("*")
-      .order(
-        "rating",
-        {
-          ascending:false
-        }
-      );
+  await sb
+    .from("shops")
+    .select("*")
+    .order("rating",{ascending:false});
+
 
   if(error){
 
@@ -2056,11 +2186,12 @@ async function loadShops(){
       </div>`;
 
     $("status").textContent =
-      "お店を読み込めませんでした。";
+      "店舗を読み込めませんでした。";
 
     return;
 
   }
+
 
   shops = data || [];
 
@@ -2069,41 +2200,7 @@ async function loadShops(){
 
   renderShops();
 
-}
-
-
-async function loadProfiles(){
-
-  if(guestMode){
-
-    profiles = [];
-
-    return;
-
-  }
-
-  const {
-    data,
-    error
-  } =
-    await sb
-      .from("profiles")
-      .select("*");
-
-  if(error){
-
-    /*
-     * 履歴自体は表示できるようにする。
-     */
-    profiles = [];
-
-    return;
-
-  }
-
-  profiles = data || [];
-
-  updateAffiliationFilter();
+  drawWheel();
 
 }
 
@@ -2114,18 +2211,25 @@ async function loadHistory(){
     data,
     error
   } =
-    await sb
-      .from("lunch_history")
-      .select(
-        "id,visited_date,user_id,shop_id"
+  await sb
+    .from("lunch_history")
+    .select(`
+      id,
+      visited_date,
+      user_id,
+      shop_id,
+      shops(
+        name,
+        genre,
+        rating
       )
-      .order(
-        "visited_date",
-        {
-          ascending:false
-        }
-      )
-      .limit(500);
+    `)
+    .order(
+      "visited_date",
+      {ascending:false}
+    )
+    .limit(500);
+
 
   if(error){
 
@@ -2139,9 +2243,62 @@ async function loadHistory(){
 
   }
 
+
   history = data || [];
 
+
+  /*
+    profilesを別取得。
+    nested selectでaffiliationを
+    直接参照しないため、
+    affiliation周りのエラーを
+    起こしにくくする。
+  */
+
+  const ids =
+    [...new Set(
+      history
+        .map(x=>x.user_id)
+        .filter(Boolean)
+    )];
+
+
+  if(ids.length){
+
+    const {
+      data:profiles
+    } =
+    await sb
+      .from("profiles")
+      .select(
+        "id,username,affiliation"
+      )
+      .in("id",ids);
+
+
+    const map =
+      new Map(
+        (profiles||[])
+          .map(p=>[p.id,p])
+      );
+
+
+    history =
+      history.map(h=>({
+
+        ...h,
+
+        profiles:
+          map.get(h.user_id) || null
+
+      }));
+
+  }
+
+
   renderHistory();
+
+  renderShops();
 
   updateStatus();
 
@@ -2149,642 +2306,924 @@ async function loadHistory(){
 
 
 /* =========================================================
-   プロフィール取得
+   履歴フィルター
 ========================================================= */
 
-function profileById(id){
+function getHistoryAffiliationScope(){
 
-  return profiles.find(
-    p => p.id === id
-  );
+  const value =
+    $("historyAffiliationFilter").value;
 
-}
-
-
-function shopById(id){
-
-  return shops.find(
-    s => s.id === id
-  );
-
-}
-
-
-/* =========================================================
-   所属フィルター
-========================================================= */
-
-function updateAffiliationFilter(){
-
-  const select =
-    $("historyAffiliation");
-
-  const current =
-    select.value || "all";
-
-  const affiliations =
-    [
-      ...new Set(
-        profiles
-          .map(p=>p.affiliation)
-          .filter(Boolean)
-      )
-    ];
-
-  select.innerHTML =
-    `<option value="all">
-      全所属
-    </option>` +
-    affiliations
-      .map(a=>
-        `<option value="${esc(a)}">
-          ${esc(a)}
-        </option>`
-      )
-      .join("");
 
   if(
-    affiliations.includes(current)
+    value === "mine"
   ){
 
-    select.value = current;
-
-  }else{
-
-    select.value = "all";
+    return currentProfile?.affiliation ||
+      "__none__";
 
   }
 
+
+  return value;
+
 }
 
 
-/* =========================================================
-   履歴表示
-========================================================= */
+function historyMatchesAffiliation(
+  row,
+  scope
+){
 
-function getHistoryForDisplay(){
-
-  const period =
-    $("historyPeriod").value;
-
-  const affiliation =
-    $("historyAffiliation").value;
-
-  return history.filter(row=>{
-
-    if(period === "thisWeek"){
-
-      if(!isThisWeek(row.visited_date))
-        return false;
-
-    }
-
-    if(period === "lastWeek"){
-
-      if(!isLastWeek(row.visited_date))
-        return false;
-
-    }
-
-    if(
-      affiliation !== "all"
-    ){
-
-      const p =
-        profileById(
-          row.user_id
-        );
-
-      if(
-        p?.affiliation !== affiliation
-      ){
-
-        return false;
-
-      }
-
-    }
-
+  if(scope==="all"){
     return true;
+  }
 
-  });
+  return (
+    row.profiles?.affiliation ||
+    ""
+  ) === scope;
 
 }
 
 
 function renderHistory(){
 
-  const list =
-    getHistoryForDisplay();
+  if(!currentUser){
 
-  $("historyCount").textContent =
-    `${list.length}件`;
-
-  if(!list.length){
+    $("historyCount").textContent = "";
 
     $("historyList").innerHTML =
       `<div class="empty">
-        この条件の履歴はありません。
+        ゲストでは履歴を表示できません。<br>
+        ログインすると、所属別の履歴を確認できます。
       </div>`;
 
     return;
 
   }
 
-  $("historyList").innerHTML =
-    list
-      .map(row=>{
 
-        const shop =
-          shopById(
-            row.shop_id
-          );
+  const period =
+    $("historyPeriod").value;
 
-        const profile =
-          profileById(
-            row.user_id
-          );
+  const now =
+    new Date();
 
-        const username =
-          profile?.username ||
-          (
-            row.user_id === currentUser?.id
-              ? "あなた"
-              : "ユーザー"
-          );
+  const thisStart =
+    weekStart(now);
 
-        const affiliation =
-          profile?.affiliation ||
-          "";
+  const lastStart =
+    addDays(thisStart,-7);
 
-        return `
-          <div class="item">
-
-            <div class="item-row">
-
-              <div>
-
-                <div class="name">
-                  ${esc(shop?.name || "不明な店舗")}
-                </div>
-
-                <div class="info">
-
-                  ${esc(row.visited_date)}
-                  /
-                  ${esc(shop?.genre || "")}
-                  /
-                  ⭐ ${Number(shop?.rating || 0).toFixed(2)}
-
-                  <br>
-
-                  👤 ${esc(username)}
-
-                  ${
-                    affiliation
-                      ? `<span class="affiliation-badge">
-                          ${esc(affiliation)}
-                        </span>`
-                      : ""
-                  }
-
-                </div>
-
-              </div>
-
-              <div class="visited">
-                VISITED
-              </div>
-
-            </div>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-}
+  const nextStart =
+    addDays(thisStart,7);
 
 
-$("historyPeriod").onchange =
-  renderHistory;
-
-$("historyAffiliation").onchange =
-  renderHistory;
+  const scope =
+    getHistoryAffiliationScope();
 
 
-/* =========================================================
-   自分の所属に限定した履歴
-========================================================= */
-
-function historyForMyAffiliation(){
-
-  if(guestMode)
-    return history;
-
-  const myAff =
-    currentProfile?.affiliation;
-
-  if(!myAff)
-    return history;
-
-  return history.filter(row=>{
-
-    const p =
-      profileById(
-        row.user_id
-      );
-
-    return p?.affiliation === myAff;
-
-  });
-
-}
+  let rows =
+    history.filter(
+      h =>
+        historyMatchesAffiliation(
+          h,
+          scope
+        )
+    );
 
 
-/* =========================================================
-   候補
-========================================================= */
+  if(period==="this"){
 
-function getCandidates(){
-
-  if(!shops.length)
-    return [];
-
-  const myHistory =
-    historyForMyAffiliation();
-
-  const weekVisited =
-    new Set(
-      myHistory
-        .filter(
-          x=>isThisWeek(
-            x.visited_date
+    rows =
+      rows.filter(
+        h =>
+          isDateBetween(
+            h.visited_date,
+            thisStart,
+            nextStart
           )
-        )
-        .map(
-          x=>x.shop_id
-        )
-    );
-
-  const yesterdayRows =
-    myHistory.filter(
-      x =>
-        x.visited_date ===
-        yesterday()
-    );
-
-  const yesterdayGenres =
-    new Set(
-      yesterdayRows
-        .map(
-          x =>
-            shopById(
-              x.shop_id
-            )?.genre
-        )
-        .filter(Boolean)
-    );
-
-  let candidates =
-    shops.filter(shop=>{
-
-      const avoidWeek =
-        $("avoidWeekVisited")
-          .checked;
-
-      const avoidGenre =
-        $("avoidYesterdayGenre")
-          .checked;
-
-      if(
-        avoidWeek &&
-        weekVisited.has(shop.id)
-      ){
-
-        return false;
-
-      }
-
-      if(
-        avoidGenre &&
-        yesterdayGenres.size &&
-        yesterdayGenres.has(shop.genre)
-      ){
-
-        return false;
-
-      }
-
-      return true;
-
-    });
-
-
-  /*
-   * 候補がなくなった場合は
-   * 昨日のジャンル制限だけ解除。
-   */
-
-  if(
-    !candidates.length &&
-    $("avoidYesterdayGenre").checked
-  ){
-
-    candidates =
-      shops.filter(
-        shop =>
-          !$("avoidWeekVisited").checked ||
-          !weekVisited.has(shop.id)
       );
 
   }
 
 
-  /*
-   * それでもなければ全店舗。
-   */
+  if(period==="last"){
 
-  if(!candidates.length){
-
-    candidates =
-      [...shops];
+    rows =
+      rows.filter(
+        h =>
+          isDateBetween(
+            h.visited_date,
+            lastStart,
+            thisStart
+          )
+      );
 
   }
 
-  return candidates;
 
-}
+  $("historyCount").textContent =
+    `${rows.length}件`;
 
 
-function updateStatus(){
+  if(!rows.length){
 
-  if(!shops.length){
-
-    $("status").textContent =
-      "候補となるお店がありません。";
+    $("historyList").innerHTML =
+      `<div class="empty">
+        該当する履歴はありません。
+      </div>`;
 
     return;
 
   }
 
-  const count =
-    getCandidates().length;
 
-  $("status").textContent =
-    `${count}件の候補があります。`;
+  $("historyList").innerHTML =
+    rows.map(h=>{
+
+      const affiliation =
+        h.profiles?.affiliation ||
+        "所属未設定";
+
+      return `
+        <div class="item">
+
+          <div class="item-row">
+
+            <div>
+
+              <div class="name">
+                ${esc(h.shops?.name || "不明")}
+              </div>
+
+              <div class="info">
+                ${esc(h.visited_date)}
+                /
+                ${esc(h.shops?.genre || "")}
+                /
+                ⭐ ${Number(
+                  h.shops?.rating || 0
+                ).toFixed(2)}
+
+                <br>
+
+                👤 ${esc(
+                  h.profiles?.username ||
+                  "ユーザー"
+                )}
+
+                /
+                ${esc(affiliation)}
+
+              </div>
+
+            </div>
+
+            <div class="visited">
+              VISITED
+            </div>
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
+
+}
+
+
+$("historyAffiliationFilter").onchange =
+renderHistory;
+
+$("historyPeriod").onchange =
+renderHistory;
+
+
+/* =========================================================
+   重複回避
+========================================================= */
+
+function getAvoidAffiliation(){
+
+  const value =
+    $("avoidAffiliationScope").value;
+
+
+  if(value==="mine"){
+
+    return currentProfile?.affiliation ||
+      "__none__";
+
+  }
+
+
+  return value;
+
+}
+
+
+function getCandidates(){
+
+  let list =
+    [...shops];
+
+
+  if(
+    $("avoidWeekVisited").checked &&
+    currentUser
+  ){
+
+    const start =
+      weekStart();
+
+    const end =
+      addDays(start,7);
+
+
+    const scope =
+      getAvoidAffiliation();
+
+
+    const visitedIds =
+      new Set(
+
+        history
+          .filter(h =>
+            isDateBetween(
+              h.visited_date,
+              start,
+              end
+            )
+          )
+          .filter(h =>
+            historyMatchesAffiliation(
+              h,
+              scope
+            )
+          )
+          .map(h=>h.shop_id)
+
+      );
+
+
+    list =
+      list.filter(
+        s=>!visitedIds.has(s.id)
+      );
+
+  }
+
+
+  if(
+    $("avoidYesterdayGenre").checked &&
+    currentUser
+  ){
+
+    const scope =
+      getAvoidAffiliation();
+
+
+    const genres =
+      new Set(
+
+        history
+          .filter(
+            h =>
+              h.visited_date ===
+              getYesterday()
+          )
+          .filter(
+            h =>
+              historyMatchesAffiliation(
+                h,
+                scope
+              )
+          )
+          .map(
+            h=>h.shops?.genre
+          )
+          .filter(Boolean)
+
+      );
+
+
+    if(genres.size){
+
+      const filtered =
+        list.filter(
+          s=>!genres.has(s.genre)
+        );
+
+
+      if(filtered.length){
+
+        list = filtered;
+
+      }
+
+    }
+
+  }
+
+
+  /*
+    条件で全部なくなった場合、
+    店舗自体が存在しない状態に
+    しないため段階的に戻す。
+  */
+
+  if(!list.length){
+
+    list = [...shops];
+
+  }
+
+
+  return list;
 
 }
 
 
 $("avoidWeekVisited").onchange =
-  ()=>{
+()=>{
 
-    updateStatus();
+  updateStatus();
 
-    drawWheel();
+  drawWheel();
 
-  };
+};
 
 
 $("avoidYesterdayGenre").onchange =
-  ()=>{
+()=>{
 
-    updateStatus();
+  updateStatus();
 
-    drawWheel();
+  drawWheel();
 
-  };
+};
+
+
+$("avoidAffiliationScope").onchange =
+()=>{
+
+  updateStatus();
+
+  drawWheel();
+
+};
 
 
 /* =========================================================
-   ルーレットCanvas
+   店舗表示
 ========================================================= */
 
-const canvas =
-  $("wheelCanvas");
+function renderShops(){
 
-const ctx =
-  canvas.getContext("2d");
+  if(!shops.length){
 
-const wheelColors = [
-  "#fb7185",
-  "#facc15",
-  "#34d399",
-  "#60a5fa",
-  "#c084fc",
-  "#f97316",
-  "#2dd4bf",
-  "#f472b6",
-  "#818cf8",
-  "#a3e635",
-  "#38bdf8",
-  "#fb923c"
-];
+    $("shopList").innerHTML =
+      `<div class="empty">
+        候補のお店がありません。
+      </div>`;
+
+    return;
+
+  }
 
 
-function roundedText(){
+  const visited =
+    new Set(
+
+      history
+        .filter(
+          h =>
+            isDateBetween(
+              h.visited_date,
+              weekStart(),
+              addDays(weekStart(),7)
+            )
+        )
+        .map(
+          h=>h.shop_id
+        )
+
+    );
+
+
+  $("shopList").innerHTML =
+    shops.map(s=>{
+
+      const isVisited =
+        visited.has(s.id);
+
+
+      return `
+        <div class="item">
+
+          <div class="item-row">
+
+            <div>
+
+              <div class="name">
+                ${esc(s.name)}
+              </div>
+
+              <div class="info">
+                ${esc(s.genre || "")}
+                /
+                ⭐ ${Number(
+                  s.rating || 0
+                ).toFixed(2)}
+
+                <br>
+
+                ${esc(
+                  s.note || ""
+                )}
+
+              </div>
+
+            </div>
+
+            <div class="visited">
+              ${isVisited ? "今週済" : ""}
+            </div>
+
+          </div>
+
+
+          <div class="shop-actions">
+
+            <button
+              class="secondary"
+              onclick="recordVisited('${s.id}')"
+            >
+              ✅ 行った！
+            </button>
+
+
+            <button
+              class="secondary"
+              onclick="openComments('${s.id}')"
+            >
+              💬 コメント
+            </button>
+
+
+            ${
+              s.map_url
+              ?
+              `
+                <a
+                  class="link-btn secondary mini"
+                  href="${esc(s.map_url)}"
+                  target="_blank"
+                  rel="noopener"
+                >
+                  📍 地図
+                </a>
+              `
+              :
+              ""
+            }
+
+
+            ${
+              currentUser
+              ?
+              `
+                <button
+                  class="secondary"
+                  onclick="editShop('${s.id}')"
+                >
+                  ✏️ 編集
+                </button>
+
+                <button
+                  class="danger mini"
+                  onclick="deleteShop('${s.id}')"
+                >
+                  🗑️ 削除
+                </button>
+              `
+              :
+              ""
+            }
+
+          </div>
+
+        </div>
+      `;
+
+    }).join("");
 
 }
 
 
-function wrapShopName(name,maxChars){
+/* =========================================================
+   直接「行った！」記録
+========================================================= */
 
-  const chars =
-    [...String(name || "")];
+async function recordVisited(
+  shopId
+){
 
-  if(chars.length <= maxChars)
-    return [name];
+  if(!currentUser){
 
-  const lines = [];
-
-  for(
-    let i=0;
-    i<chars.length;
-    i+=maxChars
-  ){
-
-    lines.push(
-      chars
-        .slice(i,i+maxChars)
-        .join("")
+    toast(
+      "記録するにはログインしてください。"
     );
+
+    return;
 
   }
 
-  return lines.slice(0,2);
+
+  const shop =
+    shops.find(
+      s=>s.id===shopId
+    );
+
+
+  if(!shop) return;
+
+
+  const {
+    error
+  } =
+  await sb
+    .from("lunch_history")
+    .insert({
+
+      shop_id:shopId,
+
+      user_id:currentUser.id,
+
+      visited_date:dateKey()
+
+    });
+
+
+  if(
+    error?.code === "23505"
+  ){
+
+    toast(
+      "今日はすでに記録されています。"
+    );
+
+    return;
+
+  }
+
+
+  if(error){
+
+    toast(
+      "記録に失敗: "+
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  toast(
+    `「${shop.name}」を記録しました！`
+  );
+
+
+  await loadHistory();
+
+  updateStatus();
+
+  drawWheel();
+
+}
+
+
+/* =========================================================
+   ルーレット Canvas
+========================================================= */
+
+const wheelCanvas =
+  $("wheelCanvas");
+
+const ctx =
+  wheelCanvas.getContext("2d");
+
+
+const wheelColors = [
+
+  "#ff5b7f",
+  "#ff9f1c",
+  "#20c997",
+  "#3d8bfd",
+  "#9b5de5",
+  "#ff477e",
+  "#7bdc18",
+  "#14b8c4",
+  "#8b5cf6",
+  "#ef4444",
+  "#f59e0b",
+  "#10b981"
+
+];
+
+
+function resizeCanvas(){
+
+  const rect =
+    wheelCanvas.getBoundingClientRect();
+
+  const dpr =
+    window.devicePixelRatio || 1;
+
+  wheelCanvas.width =
+    rect.width*dpr;
+
+  wheelCanvas.height =
+    rect.height*dpr;
+
+  ctx.setTransform(
+    dpr,
+    0,
+    0,
+    dpr,
+    0,
+    0
+  );
+
+  drawWheel();
+
+}
+
+
+function getShortName(
+  name
+){
+
+  const n =
+    String(name || "");
+
+  if(n.length <= 12){
+    return n;
+  }
+
+  return n.slice(0,11)+"…";
 
 }
 
 
 function drawWheel(){
 
-  const candidates =
-    getCandidates();
+  const rect =
+    wheelCanvas.getBoundingClientRect();
+
+  const width =
+    rect.width;
+
+  const height =
+    rect.height;
+
+  if(!width || !height){
+    return;
+  }
+
 
   const size =
-    canvas.width;
+    Math.min(width,height);
+
+  const cx =
+    width/2;
+
+  const cy =
+    height/2;
+
+  const radius =
+    size*0.465;
+
 
   ctx.clearRect(
     0,
     0,
-    size,
-    size
+    width,
+    height
   );
+
+
+  candidates =
+    getCandidates();
+
 
   if(!candidates.length){
 
     ctx.beginPath();
 
     ctx.arc(
-      size/2,
-      size/2,
-      size*.45,
+      cx,
+      cy,
+      radius,
       0,
       Math.PI*2
     );
 
     ctx.fillStyle =
-      "#374151";
+      "rgba(255,255,255,.12)";
 
     ctx.fill();
+
+    ctx.fillStyle =
+      "#fff";
+
+    ctx.font =
+      "bold 18px system-ui";
+
+    ctx.textAlign =
+      "center";
+
+    ctx.textBaseline =
+      "middle";
+
+    ctx.fillText(
+      "お店がありません",
+      cx,
+      cy
+    );
 
     return;
 
   }
 
 
-  const cx =
-    size/2;
-
-  const cy =
-    size/2;
-
-  const radius =
-    size*.455;
-
-  const slice =
-    Math.PI*2 /
+  const count =
     candidates.length;
 
-  /*
-   * 最初のマスを上から開始。
-   */
+  const slice =
+    Math.PI*2/count;
 
-  const start =
-    -Math.PI/2;
+
+  ctx.save();
+
+  ctx.translate(
+    cx,
+    cy
+  );
+
+
+  /*
+    Canvas上での現在回転を反映
+  */
+
+  ctx.rotate(
+    wheelRotation*Math.PI/180
+  );
 
 
   for(
     let i=0;
-    i<candidates.length;
+    i<count;
     i++
   ){
 
-    const a0 =
-      start +
+    const start =
+      -Math.PI/2 +
       i*slice;
 
-    const a1 =
-      a0 +
-      slice;
+    const end =
+      start+slice;
 
-    const color =
-      wheelColors[
-        i % wheelColors.length
-      ];
+
+    /* 外周 */
 
     ctx.beginPath();
 
     ctx.moveTo(
-      cx,
-      cy
+      0,
+      0
     );
 
     ctx.arc(
-      cx,
-      cy,
+      0,
+      0,
       radius,
-      a0,
-      a1
+      start,
+      end
     );
 
     ctx.closePath();
 
     ctx.fillStyle =
-      color;
+      wheelColors[
+        i % wheelColors.length
+      ];
 
     ctx.fill();
 
-    ctx.lineWidth = 3;
+
+    /* 境界線 */
 
     ctx.strokeStyle =
-      "rgba(255,255,255,.28)";
+      "rgba(255,255,255,.5)";
+
+    ctx.lineWidth =
+      1.5;
 
     ctx.stroke();
 
 
     /*
-     * 店名
-     */
+      店名
+    */
 
-    const shop =
-      candidates[i];
-
-    const mid =
-      a0 +
+    const middle =
+      start +
       slice/2;
+
+
+    const textRadius =
+      radius*0.62;
+
+
+    const tx =
+      Math.cos(middle) *
+      textRadius;
+
+
+    const ty =
+      Math.sin(middle) *
+      textRadius;
+
 
     ctx.save();
 
     ctx.translate(
-      cx +
-      Math.cos(mid) *
-      radius*.68,
-
-      cy +
-      Math.sin(mid) *
-      radius*.68
+      tx,
+      ty
     );
 
-    let textAngle =
-      mid +
-      Math.PI/2;
 
     /*
-     * 下向きになる文字を反転。
-     */
+      文字が扇形の中で
+      読みやすい方向になるよう調整
+    */
+
+    let angle =
+      middle +
+      Math.PI/2;
+
 
     if(
-      textAngle >
-      Math.PI/2 &&
-      textAngle <
-      Math.PI*1.5
+      angle > Math.PI/2 &&
+      angle < Math.PI*1.5
     ){
 
-      textAngle += Math.PI;
+      angle += Math.PI;
 
     }
 
-    ctx.rotate(
-      textAngle
-    );
+
+    ctx.rotate(angle);
 
 
-    let fontSize = 18;
+    const shopName =
+      getShortName(
+        candidates[i].name
+      );
 
-    if(candidates.length >= 12)
-      fontSize = 14;
 
-    if(candidates.length >= 16)
-      fontSize = 12;
+    let fontSize =
+      Math.max(
+        10,
+        Math.min(
+          17,
+          210/count
+        )
+      );
 
-    if(candidates.length >= 20)
-      fontSize = 10;
+
+    if(shopName.length>=10){
+
+      fontSize =
+        Math.max(
+          9,
+          fontSize-2
+        );
+
+    }
+
 
     ctx.font =
-      `900 ${fontSize}px system-ui,-apple-system,sans-serif`;
+      `900 ${fontSize}px system-ui,
+       -apple-system,
+       BlinkMacSystemFont,
+       "Segoe UI",
+       sans-serif`;
 
     ctx.textAlign =
       "center";
@@ -2793,52 +3232,29 @@ function drawWheel(){
       "middle";
 
     ctx.lineWidth =
-      Math.max(2,fontSize*.25);
+      Math.max(
+        3,
+        fontSize*.28
+      );
 
     ctx.strokeStyle =
-      "rgba(0,0,0,.38)";
+      "rgba(0,0,0,.35)";
+
+    ctx.strokeText(
+      shopName,
+      0,
+      0
+    );
 
     ctx.fillStyle =
       "#fff";
 
-    const maxChars =
-      candidates.length >= 16
-        ? 7
-        : candidates.length >= 12
-          ? 9
-          : 12;
-
-    const lines =
-      wrapShopName(
-        shop.name,
-        maxChars
-      );
-
-    const lineHeight =
-      fontSize*1.2;
-
-    lines.forEach(
-      (line,index)=>{
-
-        const y =
-          (index -
-          (lines.length-1)/2) *
-          lineHeight;
-
-        ctx.strokeText(
-          line,
-          0,
-          y
-        );
-
-        ctx.fillText(
-          line,
-          0,
-          y
-        );
-
-      }
+    ctx.fillText(
+      shopName,
+      0,
+      0
     );
+
 
     ctx.restore();
 
@@ -2846,20 +3262,49 @@ function drawWheel(){
 
 
   /*
-   * 外周リング
-   */
+    外周リング
+  */
 
   ctx.beginPath();
 
   ctx.arc(
-    cx,
-    cy,
+    0,
+    0,
     radius,
     0,
     Math.PI*2
   );
 
-  ctx.lineWidth = 14;
+  ctx.lineWidth =
+    size*.025;
+
+  ctx.strokeStyle =
+    "rgba(255,255,255,.42)";
+
+  ctx.stroke();
+
+
+  /*
+    内側リング
+  */
+
+  ctx.beginPath();
+
+  ctx.arc(
+    0,
+    0,
+    radius*.30,
+    0,
+    Math.PI*2
+  );
+
+  ctx.fillStyle =
+    "rgba(17,24,39,.94)";
+
+  ctx.fill();
+
+  ctx.lineWidth =
+    4;
 
   ctx.strokeStyle =
     "rgba(255,255,255,.25)";
@@ -2867,196 +3312,185 @@ function drawWheel(){
   ctx.stroke();
 
 
-  /*
-   * 内側リング
-   */
+  ctx.fillStyle =
+    "#fff";
 
-  ctx.beginPath();
+  ctx.font =
+    `900 ${Math.max(
+      13,
+      size*.045
+    )}px system-ui`;
 
-  ctx.arc(
-    cx,
-    cy,
-    radius*.90,
+  ctx.textAlign =
+    "center";
+
+  ctx.textBaseline =
+    "middle";
+
+  ctx.fillText(
+    wheelState==="spinning"
+      ? "SPIN"
+      : "TAP",
     0,
-    Math.PI*2
+    -9
   );
 
-  ctx.lineWidth = 3;
 
-  ctx.strokeStyle =
-    "rgba(255,255,255,.18)";
+  ctx.font =
+    `700 ${Math.max(
+      9,
+      size*.027
+    )}px system-ui`;
 
-  ctx.stroke();
+  ctx.fillStyle =
+    "rgba(255,255,255,.72)";
+
+  ctx.fillText(
+    wheelState==="spinning"
+      ? "STOP"
+      : "START",
+    0,
+    13
+  );
+
+
+  ctx.restore();
 
 }
+
+
+window.addEventListener(
+  "resize",
+  resizeCanvas
+);
 
 
 /* =========================================================
-   ルーレット回転
+   ルーレット開始
 ========================================================= */
-
-function normalizeDegrees(deg){
-
-  return (
-    (deg % 360) +
-    360
-  ) % 360;
-
-}
-
-
-function getWinner(){
-
-  const candidates =
-    getCandidates();
-
-  if(!candidates.length)
-    return null;
-
-  const slice =
-    360 /
-    candidates.length;
-
-  /*
-   * ルーレットは上がポインター。
-   * 回転した分だけ逆方向の位置を見る。
-   */
-
-  const local =
-    normalizeDegrees(
-      -wheelRotation
-    );
-
-  const index =
-    Math.floor(
-      local / slice
-    );
-
-  return candidates[
-    Math.min(
-      index,
-      candidates.length-1
-    )
-  ];
-
-}
-
-
-function setWheelRotation(){
-
-  $("wheelCanvas")
-    .style
-    .transform =
-      `rotate(${wheelRotation}deg)`;
-
-}
-
 
 function startWheel(){
 
-  if(wheelAnimation)
+  if(
+    wheelState !== "idle"
+  ){
+
     return;
+
+  }
+
 
   if(!shops.length){
 
     toast(
-      "お店がありません。"
+      "候補のお店がありません。"
     );
 
     return;
 
   }
 
-  if(
-    !getCandidates().length
-  ){
+
+  candidates =
+    getCandidates();
+
+
+  if(!candidates.length){
 
     toast(
-      "候補となるお店がありません。"
+      "候補のお店がありません。"
     );
 
     return;
 
   }
 
-  wheelStopping = false;
 
-  wheelVelocity =
-    1550 +
-    Math.random()*350;
+  wheelState =
+    "spinning";
 
-  lastFrameTime =
+  wheelStartTime =
     performance.now();
 
-  $("wheelMessage")
-    .textContent =
-    "🎰 もう一度タップでストップ";
 
-  $("wheelCenter")
-    .innerHTML =
-    "SPIN<br>🍜";
+  $("wheelHint").textContent =
+    "🎰 もう一度タップしてストップ";
 
-  $("status")
-    .textContent =
-    "ランチを選んでいます…";
 
-  $("wheelArea")
-    .classList
-    .add("spinning");
+  $("spinBtn").textContent =
+    "⏹ タップして止める";
 
-  $("spinBtn")
-    .disabled = true;
 
-  $("visitedBtn")
-    .disabled = true;
+  $("spinBtn").disabled =
+    false;
 
-  $("commentBtn")
-    .disabled = true;
 
-  $("mapBtn")
-    .style
-    .display = "none";
+  $("visitedBtn").disabled =
+    true;
+
+  $("commentBtn").disabled =
+    true;
+
+  $("mapBtn").style.display =
+    "none";
+
+
+  $("status").textContent =
+    `${candidates.length}件から選択中...`;
+
+
+  runFastRotation();
+
+}
+
+
+function runFastRotation(){
+
+  cancelAnimationFrame(
+    wheelAnimation
+  );
+
+
+  let last =
+    performance.now();
+
 
   function frame(now){
 
-    const dt =
-      Math.min(
-        .04,
-        (now-lastFrameTime)/1000
-      );
+    if(
+      wheelState !== "spinning"
+    ){
 
-    lastFrameTime =
-      now;
-
-    wheelRotation +=
-      wheelVelocity *
-      dt;
-
-    setWheelRotation();
-
-    /*
-     * 停止操作後は減速。
-     * 加速はしない。
-     */
-
-    if(wheelStopping){
-
-      wheelVelocity -=
-        1450 * dt;
-
-      if(wheelVelocity <= 0){
-
-        wheelVelocity = 0;
-
-        wheelAnimation = null;
-
-        finishWheel();
-
-        return;
-
-      }
+      return;
 
     }
+
+
+    const dt =
+      Math.min(
+        40,
+        now-last
+      );
+
+    last = now;
+
+
+    /*
+      スタート直後から
+      一定速度で高速回転。
+      ストップ時にのみ減速。
+    */
+
+    wheelRotation +=
+      0.78 * dt;
+
+
+    wheelRotation =
+      wheelRotation % 360;
+
+
+    drawWheel();
+
 
     wheelAnimation =
       requestAnimationFrame(
@@ -3064,6 +3498,7 @@ function startWheel(){
       );
 
   }
+
 
   wheelAnimation =
     requestAnimationFrame(
@@ -3073,96 +3508,216 @@ function startWheel(){
 }
 
 
+/* =========================================================
+   ルーレット停止
+========================================================= */
+
 function stopWheel(){
 
-  if(!wheelAnimation)
+  if(
+    wheelState !== "spinning"
+  ){
+
     return;
-
-  if(wheelStopping)
-    return;
-
-  wheelStopping = true;
-
-  $("wheelMessage")
-    .textContent =
-    "🎯 決まります…";
-
-}
-
-
-function finishWheel(){
-
-  const winner =
-    getWinner();
-
-  $("wheelArea")
-    .classList
-    .remove("spinning");
-
-  $("wheelMessage")
-    .textContent =
-    "🎉 決定！";
-
-  $("wheelCenter")
-    .innerHTML =
-    "🎉<br>決定";
-
-  $("spinBtn")
-    .disabled = false;
-
-  $("visitedBtn")
-    .disabled =
-      guestMode ||
-      !winner;
-
-  $("commentBtn")
-    .disabled =
-      !winner;
-
-  currentShop =
-    winner;
-
-  if(winner){
-
-    showResult(
-      winner,
-      getCandidates().length
-    );
 
   }
 
+
+  wheelState =
+    "stopping";
+
+
+  cancelAnimationFrame(
+    wheelAnimation
+  );
+
+
+  const selected =
+    weightedRandom(
+      candidates
+    );
+
+
+  currentShop =
+    selected;
+
+
+  const index =
+    candidates.findIndex(
+      s=>s.id===selected.id
+    );
+
+
+  const count =
+    candidates.length;
+
+  const slice =
+    360/count;
+
+
+  /*
+    Canvasの各マスの中心角。
+
+    描画開始は12時方向なので
+    indexの中心は
+
+    -90 + index*slice + slice/2
+
+  */
+
+  const centerAngle =
+    -90 +
+    index*slice +
+    slice/2;
+
+
+  /*
+    ポインターを12時に合わせる。
+  */
+
+  let target =
+    360*5 +
+    (-centerAngle);
+
+
+  /*
+    現在位置から自然につながる
+    正方向の回転にする。
+  */
+
+  const current =
+    wheelRotation;
+
+
+  while(
+    target + current < current + 360*4
+  ){
+
+    target += 360;
+
+  }
+
+
+  const start =
+    wheelRotation;
+
+
+  const end =
+    start +
+    target;
+
+
+  const duration =
+    2300;
+
+
+  const startTime =
+    performance.now();
+
+
+  function animate(now){
+
+    const p =
+      Math.min(
+        1,
+        (now-startTime)/
+        duration
+      );
+
+
+    /*
+      最初は速く、
+      最後に滑らかに減速。
+      停止時に加速はしない。
+    */
+
+    const eased =
+      1 -
+      Math.pow(
+        1-p,
+        4
+      );
+
+
+    wheelRotation =
+      start +
+      (end-start)*eased;
+
+
+    drawWheel();
+
+
+    if(p<1){
+
+      wheelAnimation =
+        requestAnimationFrame(
+          animate
+        );
+
+    }else{
+
+      wheelRotation =
+        wheelRotation%360;
+
+      wheelState =
+        "idle";
+
+      showResult(
+        selected,
+        count
+      );
+
+    }
+
+  }
+
+
+  wheelAnimation =
+    requestAnimationFrame(
+      animate
+    );
+
 }
 
 
-function toggleWheel(){
+$("wheelArea").onclick =
+()=>{
 
-  if(wheelAnimation){
-
-    stopWheel();
-
-  }else{
+  if(
+    wheelState==="idle"
+  ){
 
     startWheel();
 
+  }else if(
+    wheelState==="spinning"
+  ){
+
+    stopWheel();
+
   }
 
-}
+};
 
-
-$("wheelArea").addEventListener(
-  "click",
-  toggleWheel
-);
-
-
-/*
- * iPhoneのタップ連打などで
- * クリックが二重にならないように
- * spinボタンは別処理。
- */
 
 $("spinBtn").onclick =
-  toggleWheel;
+()=>{
+
+  if(
+    wheelState==="idle"
+  ){
+
+    startWheel();
+
+  }else if(
+    wheelState==="spinning"
+  ){
+
+    stopWheel();
+
+  }
+
+};
 
 
 /* =========================================================
@@ -3174,8 +3729,12 @@ function showResult(
   count
 ){
 
-  if(!shop)
-    return;
+  $("wheelHint").textContent =
+    "🎰 ルーレットをタップしてもう一度";
+
+  $("spinBtn").textContent =
+    "🎲 今日のランチを決める";
+
 
   $("result").innerHTML = `
 
@@ -3190,324 +3749,54 @@ function showResult(
     <div class="meta">
 
       ⭐ 評価：
-      ${Number(shop.rating || 0).toFixed(2)}
+      ${Number(
+        shop.rating || 0
+      ).toFixed(2)}
 
       <br>
 
-      ${esc(shop.note || "")}
+      ${esc(
+        shop.note || ""
+      )}
 
       <br>
 
-      今日のランチはこちら！
+      ${count}件の候補から決まりました。
 
     </div>
 
   `;
 
+
   $("status").textContent =
-    "今日のランチ、決まりました。";
-
-  $("mapBtn").href =
-    shop.map_url || "#";
-
-  $("mapBtn").style.display =
-    shop.map_url
-      ? "block"
-      : "none";
-
-}
+    "今日のランチ、決まりました！";
 
 
-/* =========================================================
-   行った！記録
-========================================================= */
+  if(shop.map_url){
 
-$("visitedBtn").onclick =
-  async()=>{
+    $("mapBtn").href =
+      shop.map_url;
 
-    if(
-      guestMode ||
-      !currentShop
-    )
-      return;
+    $("mapBtn").style.display =
+      "block";
 
-    await recordVisit(
-      currentShop.id,
-      dateKey()
-    );
+  }else{
 
-  };
-
-
-async function recordVisit(
-  shopId,
-  visitedDate
-){
-
-  if(guestMode){
-
-    toast(
-      "ゲストでは記録できません。"
-    );
-
-    return;
+    $("mapBtn").style.display =
+      "none";
 
   }
 
-  if(!shopId)
-    return;
 
-  const {
-    error
-  } =
-    await sb
-      .from("lunch_history")
-      .insert({
-        shop_id:shopId,
-        user_id:currentUser.id,
-        visited_date:visitedDate
-      });
+  if(currentUser){
 
-  if(
-    error?.code === "23505"
-  ){
+    $("visitedBtn").disabled =
+      false;
 
-    toast(
-      "この日はすでに記録されています。"
-    );
-
-    return;
+    $("commentBtn").disabled =
+      false;
 
   }
-
-  if(error){
-
-    toast(
-      error.message
-    );
-
-    return;
-
-  }
-
-  const shop =
-    shopById(shopId);
-
-  toast(
-    `「${shop?.name || "お店"}」を記録しました！`
-  );
-
-  $("visitedBtn")
-    .disabled = true;
-
-  await loadHistory();
-
-  renderShops();
-
-  updateStatus();
-
-  drawWheel();
-
-}
-
-
-/* =========================================================
-   直接記録
-========================================================= */
-
-function renderRecordShopSelect(){
-
-  if(guestMode)
-    return;
-
-  const select =
-    $("recordShop");
-
-  if(!shops.length){
-
-    select.innerHTML =
-      `<option value="">
-        お店がありません
-      </option>`;
-
-    return;
-
-  }
-
-  select.innerHTML =
-    shops
-      .map(shop=>
-        `<option value="${shop.id}">
-          ${esc(shop.name)}
-          /
-          ${esc(shop.genre)}
-        </option>`
-      )
-      .join("");
-
-  $("recordDate").value =
-    dateKey();
-
-}
-
-
-$("directRecordBtn").onclick =
-  async()=>{
-
-    const shopId =
-      $("recordShop").value;
-
-    const date =
-      $("recordDate").value;
-
-    if(!shopId || !date){
-
-      toast(
-        "お店と日付を選択してください。"
-      );
-
-      return;
-
-    }
-
-    await recordVisit(
-      shopId,
-      date
-    );
-
-  };
-
-
-/* =========================================================
-   店舗一覧
-========================================================= */
-
-function renderShops(){
-
-  const visited =
-    new Set(
-      history
-        .filter(
-          x =>
-            isThisWeek(
-              x.visited_date
-            )
-        )
-        .map(
-          x=>x.shop_id
-        )
-    );
-
-  if(!shops.length){
-
-    $("shopList").innerHTML =
-      `<div class="empty">
-        現在、登録されているお店がありません。
-      </div>`;
-
-    return;
-
-  }
-
-  $("shopList").innerHTML =
-    shops
-      .map(shop=>{
-
-        return `
-
-          <div class="item">
-
-            <div class="item-row">
-
-              <div>
-
-                <div class="name">
-                  ${esc(shop.name)}
-                </div>
-
-                <div class="info">
-
-                  ${esc(shop.genre)}
-                  /
-                  ⭐ ${Number(shop.rating || 0).toFixed(2)}
-
-                  <br>
-
-                  ${esc(shop.note || "")}
-
-                </div>
-
-              </div>
-
-              <div class="visited">
-
-                ${
-                  visited.has(shop.id)
-                    ? "今週済"
-                    : ""
-                }
-
-              </div>
-
-            </div>
-
-
-            <div class="shop-actions">
-
-              <button
-                class="secondary"
-                onclick="openComments('${shop.id}')">
-                💬 コメント
-              </button>
-
-
-              ${
-                shop.map_url
-                  ? `
-                    <a
-                      class="link-btn secondary mini"
-                      href="${esc(shop.map_url)}"
-                      target="_blank"
-                      rel="noopener">
-                      📍 地図
-                    </a>
-                  `
-                  : ""
-              }
-
-
-              ${
-                !guestMode
-                  ? `
-                    <button
-                      class="secondary"
-                      onclick="editShop('${shop.id}')">
-                      ✏️ 編集
-                    </button>
-
-                    <button
-                      class="danger mini"
-                      onclick="deleteShop('${shop.id}')">
-                      🗑️ 削除
-                    </button>
-
-                    <button
-                      class="secondary mini"
-                      onclick="openEditHistory('${shop.id}')">
-                      📝 編集履歴
-                    </button>
-                  `
-                  : ""
-              }
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
-      .join("");
 
 }
 
@@ -3516,63 +3805,64 @@ function renderShops(){
    コメント
 ========================================================= */
 
-$("commentBtn").onclick =
-  ()=>{
-    if(currentShop)
-      openComments(
-        currentShop.id
-      );
-  };
-
-
 async function openComments(
   shopId
 ){
 
   const shop =
-    shopById(shopId);
+    shops.find(
+      s=>s.id===shopId
+    );
 
-  if(!shop)
-    return;
+
+  if(!shop) return;
+
 
   $("commentTitle").textContent =
     `💬 ${shop.name}`;
 
+
   $("commentModal")
-    .classList
-    .add("show");
+    .classList.add("show");
+
 
   $("commentsList").innerHTML =
     `<div class="empty">
       読み込み中...
     </div>`;
 
-  $("commentBody").value = "";
+
+  $("commentBody").value =
+    "";
+
 
   $("sendCommentBtn")
-    .dataset
-    .shopId = shopId;
+    .dataset.shopId =
+    shopId;
 
 
   const {
     data,
     error
   } =
-    await sb
-      .from("comments")
-      .select(
-        "id,body,user_id,created_at"
-      )
-      .eq(
-        "shop_id",
-        shopId
-      )
-      .order(
-        "created_at",
-        {
-          ascending:false
-        }
-      );
+  await sb
+    .from("comments")
+    .select(`
+      id,
+      body,
+      user_id,
+      created_at,
+      profiles(username,affiliation),
+      comment_likes(user_id)
+    `)
+    .eq(
+      "shop_id",
+      shopId
+    )
+    .order(
+      "created_at",
+      {ascending:false}
+    );
 
 
   if(error){
@@ -3587,93 +3877,144 @@ async function openComments(
   }
 
 
-  if(!data?.length){
+  $("commentsList").innerHTML =
+    data?.length
 
-    $("commentsList").innerHTML =
-      `<div class="empty">
+    ?
+
+    data.map(c=>{
+
+      const likes =
+        c.comment_likes || [];
+
+      const liked =
+        currentUser &&
+        likes.some(
+          l =>
+            l.user_id ===
+            currentUser.id
+        );
+
+
+      return `
+
+        <div class="comment">
+
+          <div class="comment-head">
+
+            <strong>
+              👤 ${esc(
+                c.profiles?.username ||
+                "ユーザー"
+              )}
+            </strong>
+
+            <span>
+              ${new Date(
+                c.created_at
+              ).toLocaleString("ja-JP")}
+            </span>
+
+          </div>
+
+
+          <div class="comment-body">
+            ${esc(c.body)}
+          </div>
+
+
+          <button
+            class="like"
+            ${
+              currentUser
+              ? ""
+              : "disabled"
+            }
+            onclick="toggleLike(
+              '${c.id}',
+              ${!!liked}
+            )"
+          >
+            ❤️ ${likes.length}
+          </button>
+
+
+          ${
+            currentUser &&
+            c.user_id ===
+            currentUser.id
+
+            ?
+
+            `
+              <button
+                class="like"
+                onclick="deleteComment(
+                  '${c.id}',
+                  '${shopId}'
+                )"
+              >
+                🗑️
+              </button>
+            `
+
+            :
+
+            ""
+          }
+
+        </div>
+
+      `;
+
+    }).join("")
+
+    :
+
+    `
+      <div class="empty">
         まだコメントはありません。
-      </div>`;
+      </div>
+    `;
+
+
+  if(!currentUser){
+
+    $("commentInputArea").innerHTML =
+      `
+        <div class="hint">
+          コメントするにはログインしてください。
+        </div>
+      `;
 
   }else{
 
-    $("commentsList").innerHTML =
-      data
-        .map(comment=>{
+    $("commentInputArea").innerHTML =
+      `
+        <div class="field">
 
-          const profile =
-            profileById(
-              comment.user_id
-            );
+          <label>
+            コメント
+          </label>
 
-          const username =
-            profile?.username ||
-            (
-              comment.user_id ===
-              currentUser?.id
-                ? "あなた"
-                : "ユーザー"
-            );
+          <textarea
+            id="commentBody"
+            maxlength="1000"
+            placeholder="このお店について一言"
+          ></textarea>
 
-          return `
+        </div>
 
-            <div class="comment">
+        <button
+          id="sendCommentBtn"
+          data-shop-id="${shopId}"
+        >
+          コメントする
+        </button>
+      `;
 
-              <div class="comment-head">
-
-                <strong>
-                  👤 ${esc(username)}
-                </strong>
-
-                <span>
-                  ${new Date(
-                    comment.created_at
-                  ).toLocaleString(
-                    "ja-JP"
-                  )}
-                </span>
-
-              </div>
-
-              <div class="comment-body">
-                ${esc(comment.body)}
-              </div>
-
-
-              ${
-                !guestMode &&
-                comment.user_id ===
-                currentUser?.id
-                  ? `
-                    <button
-                      class="like"
-                      onclick="deleteComment('${comment.id}','${shopId}')">
-                      🗑️ 削除
-                    </button>
-                  `
-                  : ""
-              }
-
-            </div>
-
-          `;
-
-        })
-        .join("");
-
-  }
-
-
-  if(guestMode){
-
-    $("commentInputArea")
-      .classList
-      .add("hidden");
-
-  }else{
-
-    $("commentInputArea")
-      .classList
-      .remove("hidden");
+    $("sendCommentBtn").onclick =
+      sendComment;
 
   }
 
@@ -3683,8 +4024,137 @@ async function openComments(
 function closeModal(){
 
   $("commentModal")
-    .classList
-    .remove("show");
+    .classList.remove("show");
+
+}
+
+
+async function sendComment(){
+
+  if(!currentUser){
+
+    toast(
+      "コメントするにはログインしてください。"
+    );
+
+    return;
+
+  }
+
+
+  const body =
+    $("commentBody")
+      .value
+      .trim();
+
+
+  const shopId =
+    $("sendCommentBtn")
+      .dataset
+      .shopId;
+
+
+  if(!body){
+
+    toast(
+      "コメントを入力してください。"
+    );
+
+    return;
+
+  }
+
+
+  const {
+    error
+  } =
+  await sb
+    .from("comments")
+    .insert({
+
+      shop_id:shopId,
+
+      user_id:currentUser.id,
+
+      body
+
+    });
+
+
+  if(error){
+
+    toast(
+      "コメントに失敗: "+
+      error.message
+    );
+
+    return;
+
+  }
+
+
+  await openComments(
+    shopId
+  );
+
+}
+
+
+async function toggleLike(
+  commentId,
+  liked
+){
+
+  if(!currentUser){
+
+    toast(
+      "ログインしてください。"
+    );
+
+    return;
+
+  }
+
+
+  if(liked){
+
+    await sb
+      .from("comment_likes")
+      .delete()
+      .eq(
+        "comment_id",
+        commentId
+      )
+      .eq(
+        "user_id",
+        currentUser.id
+      );
+
+  }else{
+
+    await sb
+      .from("comment_likes")
+      .insert({
+
+        comment_id:commentId,
+
+        user_id:currentUser.id
+
+      });
+
+  }
+
+
+  const shopId =
+    $("sendCommentBtn")?.dataset.shopId;
+
+  if(shopId){
+
+    await openComments(
+      shopId
+    );
+
+  }
 
 }
 
@@ -3695,22 +4165,25 @@ async function deleteComment(
 ){
 
   if(
+    !currentUser ||
     !confirm(
       "コメントを削除しますか？"
     )
-  )
+  ){
+
     return;
+
+  }
+
 
   const {
     error
   } =
-    await sb
-      .from("comments")
-      .delete()
-      .eq(
-        "id",
-        id
-      );
+  await sb
+    .from("comments")
+    .delete()
+    .eq("id",id);
+
 
   if(error){
 
@@ -3722,6 +4195,7 @@ async function deleteComment(
 
   }
 
+
   await openComments(
     shopId
   );
@@ -3729,76 +4203,35 @@ async function deleteComment(
 }
 
 
-$("sendCommentBtn").onclick =
-  async()=>{
+/* =========================================================
+   店舗追加・編集・削除
+========================================================= */
 
-    if(guestMode)
-      return;
+$("addShopBtn").onclick =
+()=>{
 
-    const body =
-      $("commentBody")
-        .value
-        .trim();
+  if(!currentUser){
 
-    const shopId =
-      $("sendCommentBtn")
-        .dataset
-        .shopId;
-
-    if(!body){
-
-      toast(
-        "コメントを入力してください。"
-      );
-
-      return;
-
-    }
-
-    const {
-      error
-    } =
-      await sb
-        .from("comments")
-        .insert({
-          shop_id:shopId,
-          user_id:currentUser.id,
-          body
-        });
-
-    if(error){
-
-      toast(
-        error.message
-      );
-
-      return;
-
-    }
-
-    $("commentBody").value = "";
-
-    await openComments(
-      shopId
+    toast(
+      "ログインしてください。"
     );
 
-  };
+    return;
 
+  }
 
-/* =========================================================
-   店舗追加・編集
-========================================================= */
+  openShopModal();
+
+};
+
 
 function openShopModal(
   shop=null
 ){
 
-  if(guestMode)
-    return;
-
   $("shopModal")
-    .classList
-    .add("show");
+    .classList.add("show");
+
 
   $("shopModalTitle")
     .textContent =
@@ -3806,20 +4239,27 @@ function openShopModal(
         ? "お店を編集"
         : "お店を追加";
 
+
   $("shopId").value =
     shop?.id || "";
+
 
   $("shopName").value =
     shop?.name || "";
 
+
   $("shopGenre").value =
     shop?.genre || "";
 
+
   $("shopRating").value =
-    shop?.rating ?? 3.50;
+    shop?.rating ??
+    3.50;
+
 
   $("shopNote").value =
     shop?.note || "";
+
 
   $("shopMap").value =
     shop?.map_url || "";
@@ -3830,90 +4270,86 @@ function openShopModal(
 function closeShopModal(){
 
   $("shopModal")
-    .classList
-    .remove("show");
+    .classList.remove("show");
 
 }
-
-
-$("addShopBtn").onclick =
-  ()=>{
-    openShopModal();
-  };
 
 
 function editShop(id){
 
-  if(guestMode)
+  if(!currentUser){
+
+    toast(
+      "ログインしてください。"
+    );
+
     return;
 
-  const shop =
-    shopById(id);
+  }
 
-  if(shop)
-    openShopModal(shop);
+
+  const shop =
+    shops.find(
+      s=>s.id===id
+    );
+
+
+  if(shop){
+
+    openShopModal(
+      shop
+    );
+
+  }
 
 }
 
 
-/* =========================================================
-   編集履歴
-========================================================= */
+/*
+  編集履歴は、
+  shop_edit_history が存在する場合に
+  記録を試みます。
 
-async function writeEditHistory(
+  ここで失敗しても店舗更新自体は
+  止めない設計です。
+*/
+
+async function writeShopEditHistory(
   shopId,
   action,
-  beforeData,
-  afterData
+  oldData,
+  newData
 ){
 
-  if(guestMode)
+  if(!currentUser){
     return;
+  }
 
-  /*
-   * shop_edit_history テーブルが存在する場合に保存。
-   *
-   * 想定列：
-   * shop_id
-   * edited_by
-   * action
-   * before_data
-   * after_data
-   */
 
-  const {
-    error
-  } =
+  try{
+
     await sb
       .from("shop_edit_history")
       .insert({
 
         shop_id:shopId,
 
-        edited_by:
-          currentUser.id,
+        edited_by:currentUser.id,
 
         action,
 
-        before_data:
-          beforeData || null,
+        old_data:oldData,
 
-        after_data:
-          afterData || null
+        new_data:newData
 
       });
 
-  /*
-   * 編集そのものを止めない。
-   * 履歴テーブル側の問題は画面で通知。
-   */
+  }catch(e){
 
-  if(error){
-
-    console.warn(
-      "編集履歴の保存に失敗:",
-      error.message
-    );
+    /*
+      履歴テーブルの有無によって
+      店舗操作自体を失敗させない。
+    */
 
   }
 
@@ -3921,183 +4357,194 @@ async function writeEditHistory(
 
 
 $("saveShopBtn").onclick =
-  async()=>{
+async ()=>{
 
-    if(guestMode)
-      return;
-
-    const id =
-      $("shopId").value;
-
-    const data = {
-
-      name:
-        $("shopName")
-          .value
-          .trim(),
-
-      genre:
-        $("shopGenre")
-          .value
-          .trim(),
-
-      rating:
-        Number(
-          $("shopRating")
-            .value
-        ),
-
-      note:
-        $("shopNote")
-          .value
-          .trim(),
-
-      map_url:
-        $("shopMap")
-          .value
-          .trim()
-
-    };
-
-
-    if(
-      !data.name ||
-      !data.genre
-    ){
-
-      toast(
-        "店名とジャンルは必須です。"
-      );
-
-      return;
-
-    }
-
-
-    if(id){
-
-      const before =
-        shopById(id);
-
-      const {
-        error
-      } =
-        await sb
-          .from("shops")
-          .update(data)
-          .eq(
-            "id",
-            id
-          );
-
-      if(error){
-
-        toast(
-          error.message
-        );
-
-        return;
-
-      }
-
-
-      await writeEditHistory(
-        id,
-        "update",
-        before,
-        data
-      );
-
-
-    }else{
-
-      const {
-        data:inserted,
-        error
-      } =
-        await sb
-          .from("shops")
-          .insert({
-            ...data,
-            created_by:
-              currentUser.id
-          })
-          .select()
-          .single();
-
-      if(error){
-
-        toast(
-          error.message
-        );
-
-        return;
-
-      }
-
-
-      await writeEditHistory(
-        inserted.id,
-        "create",
-        null,
-        inserted
-      );
-
-    }
-
-
-    closeShopModal();
+  if(!currentUser){
 
     toast(
-      "保存しました。"
+      "ログインしてください。"
     );
 
-    await loadShops();
+    return;
 
-    renderRecordShopSelect();
+  }
 
-    updateStatus();
 
-    drawWheel();
+  const id =
+    $("shopId").value;
+
+
+  const data = {
+
+    name:
+      $("shopName")
+        .value
+        .trim(),
+
+    genre:
+      $("shopGenre")
+        .value
+        .trim(),
+
+    rating:
+      Number(
+        $("shopRating").value
+      ),
+
+    note:
+      $("shopNote")
+        .value
+        .trim(),
+
+    map_url:
+      $("shopMap")
+        .value
+        .trim()
 
   };
 
 
-/* =========================================================
-   店舗削除
-========================================================= */
+  if(
+    !data.name ||
+    !data.genre
+  ){
+
+    toast(
+      "店名とジャンルは必須です。"
+    );
+
+    return;
+
+  }
+
+
+  if(id){
+
+    const old =
+      shops.find(
+        s=>s.id===id
+      );
+
+
+    const {
+      data:updated,
+      error
+    } =
+    await sb
+      .from("shops")
+      .update(data)
+      .eq("id",id)
+      .select()
+      .single();
+
+
+    if(error){
+
+      toast(
+        "更新に失敗: "+
+        error.message
+      );
+
+      return;
+
+    }
+
+
+    await writeShopEditHistory(
+      id,
+      "update",
+      old || null,
+      updated
+    );
+
+
+    toast(
+      "お店を更新しました。"
+    );
+
+  }else{
+
+    const {
+      data:created,
+      error
+    } =
+    await sb
+      .from("shops")
+      .insert({
+
+        ...data,
+
+        created_by:
+          currentUser.id
+
+      })
+      .select()
+      .single();
+
+
+    if(error){
+
+      toast(
+        "追加に失敗: "+
+        error.message
+      );
+
+      return;
+
+    }
+
+
+    await writeShopEditHistory(
+      created.id,
+      "create",
+      null,
+      created
+    );
+
+
+    toast(
+      "お店を追加しました。"
+    );
+
+  }
+
+
+  closeShopModal();
+
+  await loadShops();
+
+  updateStatus();
+
+}
+
 
 async function deleteShop(id){
 
-  if(guestMode)
+  if(!currentUser){
+
+    toast(
+      "ログインしてください。"
+    );
+
     return;
+
+  }
+
+
+  const shop =
+    shops.find(
+      s=>s.id===id
+    );
+
+
+  if(!shop) return;
+
 
   if(
     !confirm(
-      "このお店を削除しますか？"
+      `「${shop.name}」を削除しますか？`
     )
-  )
-    return;
-
-  const before =
-    shopById(id);
-
-  const {
-    error
-  } =
-    await sb
-      .from("shops")
-      .delete()
-      .eq(
-        "id",
-        id
-      );
-
-  if(error){
-
-    toast(
-      error.message
-    );
+  ){
 
     return;
 
@@ -4105,216 +4552,30 @@ async function deleteShop(id){
 
 
   /*
-   * 削除後も編集履歴を残す。
-   */
+    削除前に履歴を記録。
+  */
 
-  await writeEditHistory(
+  await writeShopEditHistory(
     id,
     "delete",
-    before,
+    shop,
     null
   );
 
 
-  toast(
-    "削除しました。"
-  );
-
-  await refreshAll();
-
-}
-
-
-/* =========================================================
-   編集履歴表示
-========================================================= */
-
-async function openEditHistory(
-  shopId
-){
-
-  if(guestMode)
-    return;
-
-  const shop =
-    shopById(shopId);
-
-  $("editHistoryTitle")
-    .textContent =
-      `📝 ${shop?.name || "店舗"} の編集履歴`;
-
-  $("editHistoryModal")
-    .classList
-    .add("show");
-
-  $("editHistoryList").innerHTML =
-    `<div class="empty">
-      読み込み中...
-    </div>`;
-
-
   const {
-    data,
     error
   } =
-    await sb
-      .from("shop_edit_history")
-      .select("*")
-      .eq(
-        "shop_id",
-        shopId
-      )
-      .order(
-        "created_at",
-        {
-          ascending:false
-        }
-      );
+  await sb
+    .from("shops")
+    .delete()
+    .eq("id",id);
 
 
   if(error){
 
-    $("editHistoryList").innerHTML =
-      `<div class="error">
-        編集履歴を読み込めませんでした。<br>
-        ${esc(error.message)}
-      </div>`;
-
-    return;
-
-  }
-
-
-  if(!data?.length){
-
-    $("editHistoryList").innerHTML =
-      `<div class="empty">
-        まだ編集履歴はありません。
-      </div>`;
-
-    return;
-
-  }
-
-
-  $("editHistoryList").innerHTML =
-    data
-      .map(row=>{
-
-        const editor =
-          profileById(
-            row.edited_by
-          );
-
-        const name =
-          editor?.username ||
-          "ユーザー";
-
-        let action =
-          "編集";
-
-        if(row.action === "create")
-          action = "追加";
-
-        if(row.action === "delete")
-          action = "削除";
-
-        return `
-
-          <div class="item">
-
-            <div class="name">
-              ${esc(action)}
-            </div>
-
-            <div class="info">
-
-              👤 ${esc(name)}
-
-              <br>
-
-              ${
-                row.created_at
-                  ? new Date(
-                      row.created_at
-                    ).toLocaleString(
-                      "ja-JP"
-                    )
-                  : ""
-              }
-
-            </div>
-
-          </div>
-
-        `;
-
-      })
-      .join("");
-
-}
-
-
-function closeEditHistory(){
-
-  $("editHistoryModal")
-    .classList
-    .remove("show");
-
-}
-
-
-/* =========================================================
-   所属変更
-========================================================= */
-
-async function updateMyAffiliation(){
-
-  if(guestMode)
-    return;
-
-  const current =
-    currentProfile?.affiliation ||
-    "";
-
-  const next =
-    prompt(
-      "所属を入力してください。\n\n例：国際事業部前半 / 国際事業部後半",
-      current
-    );
-
-  if(next === null)
-    return;
-
-  const affiliation =
-    next.trim();
-
-  if(!affiliation){
-
     toast(
-      "所属を入力してください。"
-    );
-
-    return;
-
-  }
-
-  const {
-    error
-  } =
-    await sb
-      .from("profiles")
-      .update({
-        affiliation
-      })
-      .eq(
-        "id",
-        currentUser.id
-      );
-
-  if(error){
-
-    toast(
+      "削除に失敗: "+
       error.message
     );
 
@@ -4322,47 +4583,109 @@ async function updateMyAffiliation(){
 
   }
 
-  currentProfile.affiliation =
-    affiliation;
-
-  updateUserUI();
-
-  await loadProfiles();
-
-  renderHistory();
-
-  updateStatus();
-
-  drawWheel();
 
   toast(
-    "所属を変更しました。"
+    "お店を削除しました。"
   );
+
+
+  if(
+    currentShop?.id === id
+  ){
+
+    currentShop = null;
+
+  }
+
+
+  await refreshAll();
 
 }
 
 
-/*
- * ユーザーピルをタップすると所属変更。
- */
-
-$("userPill").addEventListener(
-  "click",
-  ()=>{
-    if(!guestMode)
-      updateMyAffiliation();
-  }
-);
-
-
 /* =========================================================
-   初期描画
+   初期化
 ========================================================= */
 
-$("wheelCanvas")
-  .style
-  .transform =
-    "rotate(0deg)";
+async function init(){
+
+  try{
+
+    const {
+      data:{
+        session
+      }
+    } =
+    await sb.auth.getSession();
+
+
+    if(session){
+
+      await enterApp(
+        session.user
+      );
+
+    }else{
+
+      showAuth();
+
+    }
+
+
+    sb.auth.onAuthStateChange(
+      async(
+        event,
+        session
+      )=>{
+
+        /*
+          INITIAL_SESSIONなどで
+          二重実行しすぎないようにする。
+        */
+
+        if(session && !currentUser){
+
+          await enterApp(
+            session.user
+          );
+
+        }
+
+        if(
+          !session &&
+          currentUser
+        ){
+
+          currentUser = null;
+
+          currentProfile = null;
+
+          showAuth();
+
+        }
+
+      }
+    );
+
+
+    setTimeout(
+      resizeCanvas,
+      100
+    );
+
+
+  }catch(e){
+
+    console.error(e);
+
+    showAuthMessage(
+      "アプリの初期化に失敗しました。",
+      true
+    );
+
+  }
+
+}
 
 
 init();
