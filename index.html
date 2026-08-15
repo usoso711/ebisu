@@ -384,8 +384,8 @@ button:disabled{
   fill:#fff;
 
   paint-order:stroke;
-  stroke:rgba(0,0,0,.35);
-  stroke-width:3px;
+  stroke:rgba(0,0,0,.4);
+  stroke-width:2.5px;
   stroke-linejoin:round;
 
   pointer-events:none;
@@ -399,7 +399,7 @@ button:disabled{
 
   transform:translate(-50%,-50%);
 
-  width:31%;
+  width:28%;
   aspect-ratio:1;
 
   border-radius:50%;
@@ -419,10 +419,11 @@ button:disabled{
 
   text-align:center;
 
-  padding:8px;
+  padding:4px;
 
+  font-size:clamp(12px, 3.5vw, 16px);
   font-weight:950;
-  line-height:1.15;
+  letter-spacing: 0.05em;
 
   box-shadow:
     0 0 0 8px rgba(0,0,0,.12),
@@ -825,6 +826,7 @@ input[type=checkbox]{
   padding:3px 5px;
 
   font-size:11px;
+  cursor:pointer;
 }
 
 
@@ -945,19 +947,9 @@ input[type=checkbox]{
     <label>所属</label>
 
     <select id="department">
-
-      <option value="">
-        所属を選択
-      </option>
-
-      <option>
-        国際事業部前半
-      </option>
-
-      <option>
-        国際事業部後半
-      </option>
-
+      <option value="">所属を選択</option>
+      <option value="国際事業部前半">国際事業部前半</option>
+      <option value="国際事業部後半">国際事業部後半</option>
     </select>
 
   </div>
@@ -1143,7 +1135,6 @@ input[type=checkbox]{
           class="wheel-center"
           id="wheelCenter"
         >
-          TAP<br>
           START
         </div>
 
@@ -1248,7 +1239,7 @@ input[type=checkbox]{
         </strong>
 
         <small>
-          全員の履歴を対象
+          自分の所属の履歴を対象
         </small>
 
       </div>
@@ -1271,7 +1262,7 @@ input[type=checkbox]{
         </strong>
 
         <small>
-          全員の履歴を対象
+          自分の所属の履歴を対象
         </small>
 
       </div>
@@ -1301,10 +1292,17 @@ input[type=checkbox]{
       📒 ランチ履歴
     </h3>
 
-    <span
-      id="historyCount"
-      class="count"
-    ></span>
+    <div style="display:flex; align-items:center; gap:8px;">
+      <select id="historyFilter" style="padding:4px 8px; font-size:12px; width:auto;">
+        <option value="my">自分の所属</option>
+        <option value="all">全所属</option>
+      </select>
+
+      <span
+        id="historyCount"
+        class="count"
+      ></span>
+    </div>
 
   </div>
 
@@ -1369,7 +1367,7 @@ input[type=checkbox]{
 
   <p class="hint">
     ログインユーザーは全員、
-    追加・編集できます。
+    追加・編集・削除できます。
     編集内容は履歴に残します。
   </p>
 
@@ -1426,19 +1424,9 @@ input[type=checkbox]{
       </label>
 
       <select id="profileDepartment">
-
-        <option value="">
-          所属を選択
-        </option>
-
-        <option>
-          国際事業部前半
-        </option>
-
-        <option>
-          国際事業部後半
-        </option>
-
+        <option value="">所属を選択</option>
+        <option value="国際事業部前半">国際事業部前半</option>
+        <option value="国際事業部後半">国際事業部後半</option>
       </select>
 
     </div>
@@ -2105,13 +2093,16 @@ async function enterApp(user){
         "user"
       ).slice(0,30);
 
+    const affiliation =
+      user.user_metadata?.affiliation || null;
 
     const ins =
       await sb
         .from("profiles")
         .insert({
           id:user.id,
-          username
+          username,
+          affiliation
         });
 
 
@@ -2459,6 +2450,7 @@ async function loadHistory(){
         shop_id,
         profiles(*),
         shops(
+          id,
           name,
           genre,
           rating
@@ -2509,12 +2501,24 @@ async function loadHistory(){
 
 function renderHistory(){
 
+  const myAffiliation = getAffiliation(currentProfile);
+  const filterType = $("historyFilter") ? $("historyFilter").value : "my";
+
   const h =
     history.filter(
-      x =>
-        isThisWeek(
-          x.visited_date
-        )
+      x => {
+
+        if (!isThisWeek(x.visited_date)) return false;
+
+        if (!guestMode && filterType === "my") {
+
+          return getAffiliation(x.profiles) === myAffiliation;
+
+        }
+
+        return true;
+
+      }
     );
 
 
@@ -2599,8 +2603,19 @@ function renderHistory(){
 
           :
             `<div class="empty">
-              今週はまだ記録がありません。
+              対象の履歴はありません。
             </div>`;
+
+}
+
+
+if ($("historyFilter")) {
+
+  $("historyFilter").onchange = () => {
+
+    renderHistory();
+
+  };
 
 }
 
@@ -2611,14 +2626,15 @@ function renderHistory(){
 
 function renderShops(){
 
+  const myAffiliation = getAffiliation(currentProfile);
+
   const visited =
     new Set(
       history
         .filter(
           x =>
-            isThisWeek(
-              x.visited_date
-            )
+            isThisWeek(x.visited_date) &&
+            (guestMode || getAffiliation(x.profiles) === myAffiliation)
         )
         .map(
           x =>
@@ -2717,6 +2733,12 @@ function renderShops(){
                         onclick="editShop('${s.id}')"
                       >
                         ✏️ 編集
+                      </button>
+                      <button
+                        class="danger mini"
+                        onclick="deleteShop('${s.id}')"
+                      >
+                        🗑️ 削除
                       </button>`
                     :
                       ""
@@ -2760,14 +2782,15 @@ function updateStatus(){
 
 function getCandidates(){
 
+  const myAffiliation = getAffiliation(currentProfile);
+
   const week =
     new Set(
       history
         .filter(
           x =>
-            isThisWeek(
-              x.visited_date
-            )
+            isThisWeek(x.visited_date) &&
+            (guestMode || getAffiliation(x.profiles) === myAffiliation)
         )
         .map(
           x =>
@@ -2781,8 +2804,8 @@ function getCandidates(){
       history
         .filter(
           x =>
-            x.visited_date ===
-            yesterday()
+            x.visited_date === yesterday() &&
+            (guestMode || getAffiliation(x.profiles) === myAffiliation)
         )
         .map(
           x =>
@@ -2853,12 +2876,12 @@ $("avoidYesterdayGenre").onchange =
 
 
 /* =========================================================
-   ルーレット描画
+   ルーレット描画（90度回転＆重なり防止版）
 ========================================================= */
 
 function shortName(
   name,
-  max = 12
+  max = 10
 ){
 
   const s =
@@ -2943,13 +2966,11 @@ function renderWheel(){
 
       const a0 =
         i *
-        angle -
-        90;
+        angle;
 
       const a1 =
         (i+1) *
-        angle -
-        90;
+        angle;
 
 
       const p1 = [
@@ -2957,7 +2978,7 @@ function renderWheel(){
         200 +
           r *
           Math.cos(
-            a0 *
+            (a0 - 90) *
             Math.PI /
             180
           ),
@@ -2965,7 +2986,7 @@ function renderWheel(){
         200 +
           r *
           Math.sin(
-            a0 *
+            (a0 - 90) *
             Math.PI /
             180
           )
@@ -2978,7 +2999,7 @@ function renderWheel(){
         200 +
           r *
           Math.cos(
-            a1 *
+            (a1 - 90) *
             Math.PI /
             180
           ),
@@ -2986,7 +3007,7 @@ function renderWheel(){
         200 +
           r *
           Math.sin(
-            a1 *
+            (a1 - 90) *
             Math.PI /
             180
           )
@@ -3001,18 +3022,10 @@ function renderWheel(){
 
 
       const mid =
-        i *
-        angle +
-        angle /
-        2;
+        a0 + angle / 2;
 
 
-      const labelRadius =
-        n > 16
-          ? 112
-          : n > 12
-            ? 120
-            : 128;
+      const labelRadius = 130;
 
 
       const [
@@ -3028,13 +3041,22 @@ function renderWheel(){
 
 
       const fs =
-        n > 18
-          ? 9
-          : n > 12
+        n > 20
+          ? 8
+          : n > 14
             ? 10
             : n > 8
               ? 12
-              : 14;
+              : 13;
+
+      const charLimit =
+        n > 20
+          ? 6
+          : n > 14
+            ? 8
+            : n > 8
+              ? 10
+              : 12;
 
 
       html +=
@@ -3061,7 +3083,7 @@ function renderWheel(){
             ]
           }"
 
-          stroke="rgba(255,255,255,.25)"
+          stroke="rgba(255,255,255,.3)"
           stroke-width="1.5"
 
         />`;
@@ -3084,18 +3106,14 @@ function renderWheel(){
               ${tx.toFixed(1)}
               ${ty.toFixed(1)}
             )
-            rotate(${mid})
+            rotate(${mid + 90})
           "
 
         >
           ${esc(
             shortName(
               s.name,
-              n > 14
-                ? 8
-                : n > 10
-                  ? 10
-                  : 12
+              charLimit
             )
           )}
         </text>`;
@@ -3142,7 +3160,7 @@ function startSpin(){
 
 
   $("wheelCenter").innerHTML =
-    "STOP<br>👆";
+    "SPIN";
 
 
   $("status").textContent =
@@ -3158,12 +3176,7 @@ function startSpin(){
     performance.now();
 
 
-  /*
-    最初から速く回す。
-    ストップ時に加速はしない。
-  */
-
-  spinSpeed = 1.7;
+  spinSpeed = 1.8;
 
 
   tickerIndex =
@@ -3207,7 +3220,7 @@ function startSpin(){
 
     if(
       now-lastTick >
-      85
+      80
     ){
 
       lastTick =
@@ -3278,11 +3291,6 @@ function stopSpin(){
     selected;
 
 
-  /*
-    選ばれた店の扇形中心を
-    上の矢印に正確に合わせる。
-  */
-
   const idx =
     spinCandidates.findIndex(
       x =>
@@ -3295,11 +3303,12 @@ function stopSpin(){
     360 / n;
 
 
-  const center =
-    idx *
-    angle +
-    angle /
-    2;
+  const centerAngle =
+    idx * angle + angle / 2;
+
+
+  const targetDeg =
+    (360 - centerAngle) % 360;
 
 
   const currentNorm =
@@ -3312,30 +3321,10 @@ function stopSpin(){
 
 
   let delta =
-    (
-      -center -
-      currentNorm
-    ) %
-    360;
+    (targetDeg - currentNorm + 360) % 360;
 
 
-  delta =
-    (
-      delta +
-      360
-    ) %
-    360;
-
-
-  /*
-    5周程度追加してから
-    自然に減速。
-    STOP時に加速はしない。
-  */
-
-  delta +=
-    360 *
-    5;
+  delta += 360 * 4;
 
 
   const start =
@@ -3343,7 +3332,7 @@ function stopSpin(){
 
 
   const duration =
-    1500;
+    1600;
 
 
   const t0 =
@@ -3362,16 +3351,11 @@ function stopSpin(){
       );
 
 
-    /*
-      ease-out。
-      最初が速く、徐々に減速。
-    */
-
     const e =
       1 -
       Math.pow(
         1-p,
-        4
+        3
       );
 
 
@@ -3430,10 +3414,7 @@ function finishSpin(selected){
 
 
   $("wheelCenter").innerHTML =
-    `${esc(
-      selected.genre ||
-      "ランチ"
-    )}<br>🎉 決定！`;
+    "WIN!";
 
 
   $("spinBtn").textContent =
@@ -3875,9 +3856,7 @@ async function openComments(
                 [];
 
 
-              return
-
-                `<div class="comment">
+              return `<div class="comment">
 
                   <div class="comment-head">
 
@@ -3900,9 +3879,7 @@ async function openComments(
                   </div>
 
 
-                  <div class="comment-body">
-                    ${esc(c.body)}
-                  </div>
+                  <div class="comment-body">${esc(c.body)}</div>
 
 
                   <button
@@ -4118,7 +4095,7 @@ $("sendCommentBtn").onclick =
 
 
 /* =========================================================
-   店舗追加・編集
+   店舗追加・編集・削除
 ========================================================= */
 
 function editShop(id){
@@ -4136,6 +4113,66 @@ function editShop(id){
 
   if(s)
     openShopModal(s);
+
+}
+
+
+async function deleteShop(id){
+
+  if(guestMode || !currentUser) return;
+
+  const s = shops.find(x => x.id === id);
+
+  if(!s) return;
+
+  if(!confirm(`「${s.name}」を削除しますか？`)) return;
+
+
+  const res = await sb
+    .from("shops")
+    .delete()
+    .eq("id", id);
+
+
+  if(res.error){
+
+    toast("削除に失敗しました: " + res.error.message);
+
+    return;
+
+  }
+
+
+  await sb.from("shop_edit_history").insert({
+
+    shop_id: id,
+
+    user_id: currentUser.id,
+
+    action: "delete",
+
+    before_data: {
+
+      name: s.name,
+
+      genre: s.genre,
+
+      rating: s.rating,
+
+      note: s.note,
+
+      map_url: s.map_url
+
+    },
+
+    after_data: null
+
+  });
+
+
+  toast("お店を削除しました。");
+
+  await loadShops();
 
 }
 
@@ -4286,10 +4323,6 @@ $("saveShopBtn").onclick =
 
       }
 
-
-      /*
-        編集履歴
-      */
 
       const hist =
         await sb
@@ -4499,85 +4532,13 @@ $("saveProfileBtn").onclick =
     }
 
 
-    /*
-      profilesの実際の列を確認して
-      affiliation / department
-      のどちらかへ保存。
-    */
+    const update = {
 
-    let update = {
-      username
+      username,
+
+      affiliation
+
     };
-
-
-    if(
-      Object.prototype
-        .hasOwnProperty.call(
-          currentProfile || {},
-          "affiliation"
-        )
-    ){
-
-      update.affiliation =
-        affiliation;
-
-    }else if(
-      Object.prototype
-        .hasOwnProperty.call(
-          currentProfile || {},
-          "department"
-        )
-    ){
-
-      update.department =
-        affiliation;
-
-    }else{
-
-      const {
-        data,
-        error
-      } =
-        await sb
-          .from("profiles")
-          .select("*")
-          .eq(
-            "id",
-            currentUser.id
-          )
-          .single();
-
-
-      if(error){
-
-        toast(
-          error.message
-        );
-
-        return;
-
-      }
-
-
-      if(
-        Object.prototype
-          .hasOwnProperty.call(
-            data,
-            "affiliation"
-          )
-      ){
-
-        update.affiliation =
-          affiliation;
-
-      }else{
-
-        update.department =
-          affiliation;
-
-      }
-
-    }
 
 
     const {
@@ -4620,6 +4581,8 @@ $("saveProfileBtn").onclick =
     toast(
       "プロフィールを更新しました"
     );
+
+    await loadHistory();
 
   };
 
